@@ -1,0 +1,462 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000010000000000000001 /* SPECTRALApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000001 /* SPECTRALApp.swift */; };
+		A10000020000000000000002 /* FileImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000020000000000000002 /* FileImportView.swift */; };
+		A10000030000000000000003 /* FileImportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000030000000000000003 /* FileImportViewModel.swift */; };
+		A10000040000000000000004 /* AudioFileMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000040000000000000004 /* AudioFileMetadata.swift */; };
+		A10000050000000000000005 /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000050000000000000005 /* ColorExtension.swift */; };
+		A10000060000000000000006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000060000000000000006 /* Assets.xcassets */; };
+		A10000070000000000000007 /* DecodedAudio.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000080000000000000008 /* DecodedAudio.swift */; };
+		A10000080000000000000008 /* ChannelMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000090000000000000009 /* ChannelMode.swift */; };
+		A10000090000000000000009 /* ChannelData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* ChannelData.swift */; };
+		A1000000000000000000000A /* AudioDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* AudioDecoder.swift */; };
+		A1000000000000000000000B /* ChannelDeriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* ChannelDeriver.swift */; };
+		A1000000000000000000000C /* KWeightingFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* KWeightingFilter.swift */; };
+		A1000000000000000000000D /* LoudnessMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* LoudnessMeter.swift */; };
+		A1000000000000000000000E /* TruePeakMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* TruePeakMeter.swift */; };
+		A1000000000000000000000F /* SpectrumAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* SpectrumAnalyzer.swift */; };
+		A10000000000000000000010 /* StereoAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* StereoAnalyzer.swift */; };
+		A10000000000000000000011 /* DynamicsAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* DynamicsAnalyzer.swift */; };
+		A10000000000000000000012 /* AnalysisResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* AnalysisResult.swift */; };
+		A10000000000000000000013 /* AnalysisPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000014 /* AnalysisPipeline.swift */; };
+		A10000000000000000000014 /* ResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000015 /* ResultsView.swift */; };
+		A10000000000000000000015 /* SummaryDashboardPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000016 /* SummaryDashboardPage.swift */; };
+		A10000000000000000000016 /* LoudnessPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000017 /* LoudnessPage.swift */; };
+		A10000000000000000000017 /* TruePeakPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000018 /* TruePeakPage.swift */; };
+		A10000000000000000000018 /* SpectrumPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000019 /* SpectrumPage.swift */; };
+		A10000000000000000000019 /* StereoPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001A /* StereoPage.swift */; };
+		A1000000000000000000001A /* DynamicsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001B /* DynamicsPage.swift */; };
+		A1000000000000000000001B /* CompliancePage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001C /* CompliancePage.swift */; };
+		A1000000000000000000001C /* PlatformPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001D /* PlatformPreset.swift */; };
+		A1000000000000000000001D /* ComparisonStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001E /* ComparisonStack.swift */; };
+		A1000000000000000000001E /* ComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000001F /* ComparisonView.swift */; };
+		A1000000000000000000001F /* ExportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000020 /* ExportManager.swift */; };
+		A10000000000000000000020 /* ValidationHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000021 /* ValidationHarness.swift */; };
+		A10000000000000000000021 /* ValidationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000022 /* ValidationView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000010000000000000001 /* SPECTRALApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPECTRALApp.swift; sourceTree = "<group>"; };
+		A20000020000000000000002 /* FileImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImportView.swift; sourceTree = "<group>"; };
+		A20000030000000000000003 /* FileImportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImportViewModel.swift; sourceTree = "<group>"; };
+		A20000040000000000000004 /* AudioFileMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileMetadata.swift; sourceTree = "<group>"; };
+		A20000050000000000000005 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtension.swift; sourceTree = "<group>"; };
+		A20000060000000000000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A20000070000000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A20000080000000000000008 /* DecodedAudio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecodedAudio.swift; sourceTree = "<group>"; };
+		A20000090000000000000009 /* ChannelMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelMode.swift; sourceTree = "<group>"; };
+		A2000000000000000000000A /* ChannelData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelData.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B /* AudioDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDecoder.swift; sourceTree = "<group>"; };
+		A2000000000000000000000C /* ChannelDeriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChannelDeriver.swift; sourceTree = "<group>"; };
+		A2000000000000000000000D /* KWeightingFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KWeightingFilter.swift; sourceTree = "<group>"; };
+		A2000000000000000000000E /* LoudnessMeter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoudnessMeter.swift; sourceTree = "<group>"; };
+		A2000000000000000000000F /* TruePeakMeter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruePeakMeter.swift; sourceTree = "<group>"; };
+		A20000000000000000000010 /* SpectrumAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectrumAnalyzer.swift; sourceTree = "<group>"; };
+		A20000000000000000000011 /* StereoAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StereoAnalyzer.swift; sourceTree = "<group>"; };
+		A20000000000000000000012 /* DynamicsAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicsAnalyzer.swift; sourceTree = "<group>"; };
+		A20000000000000000000013 /* AnalysisResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisResult.swift; sourceTree = "<group>"; };
+		A20000000000000000000014 /* AnalysisPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisPipeline.swift; sourceTree = "<group>"; };
+		A20000000000000000000015 /* ResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultsView.swift; sourceTree = "<group>"; };
+		A20000000000000000000016 /* SummaryDashboardPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummaryDashboardPage.swift; sourceTree = "<group>"; };
+		A20000000000000000000017 /* LoudnessPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoudnessPage.swift; sourceTree = "<group>"; };
+		A20000000000000000000018 /* TruePeakPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruePeakPage.swift; sourceTree = "<group>"; };
+		A20000000000000000000019 /* SpectrumPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpectrumPage.swift; sourceTree = "<group>"; };
+		A2000000000000000000001A /* StereoPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StereoPage.swift; sourceTree = "<group>"; };
+		A2000000000000000000001B /* DynamicsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicsPage.swift; sourceTree = "<group>"; };
+		A2000000000000000000001C /* CompliancePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompliancePage.swift; sourceTree = "<group>"; };
+		A2000000000000000000001D /* PlatformPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformPreset.swift; sourceTree = "<group>"; };
+		A2000000000000000000001E /* ComparisonStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComparisonStack.swift; sourceTree = "<group>"; };
+		A2000000000000000000001F /* ComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComparisonView.swift; sourceTree = "<group>"; };
+		A20000000000000000000020 /* ExportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportManager.swift; sourceTree = "<group>"; };
+		A20000000000000000000021 /* ValidationHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationHarness.swift; sourceTree = "<group>"; };
+		A20000000000000000000022 /* ValidationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationView.swift; sourceTree = "<group>"; };
+		A30000010000000000000001 /* SPECTRAL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SPECTRAL.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A40000010000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A50000010000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A50000020000000000000002 /* SPECTRAL */,
+				A50000030000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A50000020000000000000002 /* SPECTRAL */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000001 /* SPECTRALApp.swift */,
+				A20000020000000000000002 /* FileImportView.swift */,
+				A20000030000000000000003 /* FileImportViewModel.swift */,
+				A20000040000000000000004 /* AudioFileMetadata.swift */,
+				A20000050000000000000005 /* ColorExtension.swift */,
+				A20000080000000000000008 /* DecodedAudio.swift */,
+				A20000090000000000000009 /* ChannelMode.swift */,
+				A2000000000000000000000A /* ChannelData.swift */,
+				A2000000000000000000000B /* AudioDecoder.swift */,
+				A2000000000000000000000C /* ChannelDeriver.swift */,
+				A2000000000000000000000D /* KWeightingFilter.swift */,
+				A2000000000000000000000E /* LoudnessMeter.swift */,
+				A2000000000000000000000F /* TruePeakMeter.swift */,
+				A20000000000000000000010 /* SpectrumAnalyzer.swift */,
+				A20000000000000000000011 /* StereoAnalyzer.swift */,
+				A20000000000000000000012 /* DynamicsAnalyzer.swift */,
+				A20000000000000000000013 /* AnalysisResult.swift */,
+				A20000000000000000000014 /* AnalysisPipeline.swift */,
+				A20000000000000000000015 /* ResultsView.swift */,
+				A20000000000000000000016 /* SummaryDashboardPage.swift */,
+				A20000000000000000000017 /* LoudnessPage.swift */,
+				A20000000000000000000018 /* TruePeakPage.swift */,
+				A20000000000000000000019 /* SpectrumPage.swift */,
+				A2000000000000000000001A /* StereoPage.swift */,
+				A2000000000000000000001B /* DynamicsPage.swift */,
+				A2000000000000000000001C /* CompliancePage.swift */,
+				A2000000000000000000001D /* PlatformPreset.swift */,
+				A2000000000000000000001E /* ComparisonStack.swift */,
+				A2000000000000000000001F /* ComparisonView.swift */,
+				A20000000000000000000020 /* ExportManager.swift */,
+				A20000000000000000000021 /* ValidationHarness.swift */,
+				A20000000000000000000022 /* ValidationView.swift */,
+				A20000060000000000000006 /* Assets.xcassets */,
+				A20000070000000000000007 /* Info.plist */,
+			);
+			path = SPECTRAL;
+			sourceTree = "<group>";
+		};
+		A50000030000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A30000010000000000000001 /* SPECTRAL.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A60000010000000000000001 /* SPECTRAL */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A80000010000000000000001 /* Build configuration list for PBXNativeTarget "SPECTRAL" */;
+			buildPhases = (
+				A70000010000000000000001 /* Sources */,
+				A40000010000000000000001 /* Frameworks */,
+				A70000020000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SPECTRAL;
+			productName = SPECTRAL;
+			productReference = A30000010000000000000001 /* SPECTRAL.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A90000010000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A60000010000000000000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A80000020000000000000002 /* Build configuration list for PBXProject "SPECTRAL" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A50000010000000000000001;
+			productRefGroup = A50000030000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A60000010000000000000001 /* SPECTRAL */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A70000020000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000060000000000000006 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A70000010000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000010000000000000001 /* SPECTRALApp.swift in Sources */,
+				A10000020000000000000002 /* FileImportView.swift in Sources */,
+				A10000030000000000000003 /* FileImportViewModel.swift in Sources */,
+				A10000040000000000000004 /* AudioFileMetadata.swift in Sources */,
+				A10000050000000000000005 /* ColorExtension.swift in Sources */,
+				A10000070000000000000007 /* DecodedAudio.swift in Sources */,
+				A10000080000000000000008 /* ChannelMode.swift in Sources */,
+				A10000090000000000000009 /* ChannelData.swift in Sources */,
+				A1000000000000000000000A /* AudioDecoder.swift in Sources */,
+				A1000000000000000000000B /* ChannelDeriver.swift in Sources */,
+				A1000000000000000000000C /* KWeightingFilter.swift in Sources */,
+				A1000000000000000000000D /* LoudnessMeter.swift in Sources */,
+				A1000000000000000000000E /* TruePeakMeter.swift in Sources */,
+				A1000000000000000000000F /* SpectrumAnalyzer.swift in Sources */,
+				A10000000000000000000010 /* StereoAnalyzer.swift in Sources */,
+				A10000000000000000000011 /* DynamicsAnalyzer.swift in Sources */,
+				A10000000000000000000012 /* AnalysisResult.swift in Sources */,
+				A10000000000000000000013 /* AnalysisPipeline.swift in Sources */,
+				A10000000000000000000014 /* ResultsView.swift in Sources */,
+				A10000000000000000000015 /* SummaryDashboardPage.swift in Sources */,
+				A10000000000000000000016 /* LoudnessPage.swift in Sources */,
+				A10000000000000000000017 /* TruePeakPage.swift in Sources */,
+				A10000000000000000000018 /* SpectrumPage.swift in Sources */,
+				A10000000000000000000019 /* StereoPage.swift in Sources */,
+				A1000000000000000000001A /* DynamicsPage.swift in Sources */,
+				A1000000000000000000001B /* CompliancePage.swift in Sources */,
+				A1000000000000000000001C /* PlatformPreset.swift in Sources */,
+				A1000000000000000000001D /* ComparisonStack.swift in Sources */,
+				A1000000000000000000001E /* ComparisonView.swift in Sources */,
+				A1000000000000000000001F /* ExportManager.swift in Sources */,
+				A10000000000000000000020 /* ValidationHarness.swift in Sources */,
+				A10000000000000000000021 /* ValidationView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		B10000010000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		B10000020000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B10000030000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SPECTRAL/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SPECTRAL;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.spectral.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B10000040000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = SPECTRAL/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = SPECTRAL;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.spectral.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A80000010000000000000001 /* Build configuration list for PBXNativeTarget "SPECTRAL" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000030000000000000003 /* Debug */,
+				B10000040000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A80000020000000000000002 /* Build configuration list for PBXProject "SPECTRAL" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000010000000000000001 /* Debug */,
+				B10000020000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = A90000010000000000000001 /* Project object */;
+}
