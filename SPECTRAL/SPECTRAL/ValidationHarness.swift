@@ -91,42 +91,104 @@ class ValidationHarness: ObservableObject {
         )
     }
 
-    // MARK: - Test 3: Known EQ (high shelf at 8 kHz)
+    // MARK: - Test 3: Known biquad EQ applied to broadband noise
+    //
+    // The previous two-sine approach (mixing 1 kHz + boosted 8 kHz) verified spectral
+    // *amplitude* at an isolated frequency but did not exercise the FFT averaging path on
+    // coloured broadband input and could not compare against a filter's theoretical transfer
+    // function. This test is more rigorous:
+    //   1. Generate deterministic broadband noise (LCG; same seed → identical sequence).
+    //   2. Design a high-shelf biquad (+6 dB at 4 kHz, Q = 0.707) via Audio EQ Cookbook.
+    //   3. Apply the filter in Double precision (Direct Form I) to avoid Float quantisation error.
+    //   4. Evaluate H(e^jω) analytically at 16 kHz — a frequency well inside the shelf passband.
+    //   5. Verify that the spectral difference measured by SpectrumAnalyzer at 16 kHz matches
+    //      the theoretical gain to within ±0.5 dB.
 
     private func runTest3KnownEQ() async -> ValidationTestResult {
-        let signal = generateSine(frequency: 1000, amplitude: 0.2, sampleRate: sampleRate, duration: duration)
-        let highSignal = generateSine(frequency: 8000, amplitude: 0.2, sampleRate: sampleRate, duration: duration)
+        let count = Int(sampleRate * duration)
 
-        // Mix: base + boosted 8 kHz
-        let gainLinear = Float(pow(10.0, 3.0 / 20.0))
-        var boosted8k = [Float](repeating: 0, count: highSignal.count)
-        var scalar = gainLinear
-        vDSP_vsmul(highSignal, 1, &scalar, &boosted8k, 1, vDSP_Length(highSignal.count))
-
-        var mixA = [Float](repeating: 0, count: signal.count)
-        vDSP_vadd(signal, 1, highSignal, 1, &mixA, 1, vDSP_Length(signal.count))
-
-        var mixB = [Float](repeating: 0, count: signal.count)
-        vDSP_vadd(signal, 1, boosted8k, 1, &mixB, 1, vDSP_Length(signal.count))
-
-        let resultA = analyzeSignal(left: mixA, right: mixA)
-        let resultB = analyzeSignal(left: mixB, right: mixB)
-
-        // Check spectral difference around 8 kHz bin
-        let freqRes = sampleRate / Double(resultA.spectrum.fftSize)
-        let bin8k = Int(8000.0 / freqRes)
-        let diffAt8k: Float
-        if bin8k < resultA.spectrum.averageSpectrum.count && bin8k < resultB.spectrum.averageSpectrum.count {
-            diffAt8k = resultB.spectrum.averageSpectrum[bin8k] - resultA.spectrum.averageSpectrum[bin8k]
-        } else {
-            diffAt8k = 0
+        // Deterministic broadband noise (Knuth multiplicative LCG, period 2^63).
+        // Using a fixed seed guarantees the same sequence across runs.
+        var noise = [Float](repeating: 0, count: count)
+        var seed: UInt64 = 6364136223846793005
+        for i in 0..<count {
+            seed = seed &* 6364136223846793005 &+ 1442695040888963407
+            noise[i] = Float(Int32(bitPattern: UInt32(seed >> 33))) / Float(Int32.max)
         }
 
-        let passed = abs(diffAt8k - 3.0) < 0.5
+        // High-shelf biquad: +6 dB at 4 kHz, Q = 0.707 (Butterworth, maximally flat)
+        // Coefficients from "Cookbook formulae for audio EQ biquad filter coefficients"
+        // (Audio EQ Cookbook by Robert Bristow-Johnson).
+        let fc = 4000.0
+        let gainDB = 6.0
+        let Q = 0.7071067811865476     // 1/√2
+        let A = pow(10.0, gainDB / 40.0)  // linear amplitude gain at shelf (not DC)
+        let w0 = 2.0 * Double.pi * fc / sampleRate
+        let cosW0 = cos(w0), sinW0 = sin(w0)
+        let alpha = sinW0 / (2.0 * Q)
+        let sqrtA = sqrt(A)
+
+        let b0 =      A * ((A + 1) + (A - 1) * cosW0 + 2 * sqrtA * alpha)
+        let b1 = -2 * A * ((A - 1) + (A + 1) * cosW0)
+        let b2 =      A * ((A + 1) + (A - 1) * cosW0 - 2 * sqrtA * alpha)
+        let a0 =          ((A + 1) - (A - 1) * cosW0 + 2 * sqrtA * alpha)
+        let a1 =  2  *    ((A - 1) - (A + 1) * cosW0)
+        let a2 =          ((A + 1) - (A - 1) * cosW0 - 2 * sqrtA * alpha)
+
+        // Normalised coefficients
+        let nb0 = b0 / a0, nb1 = b1 / a0, nb2 = b2 / a0
+        let na1 = a1 / a0, na2 = a2 / a0
+
+        // Apply biquad in Double precision to suppress coefficient-quantisation error.
+        var filtered = [Float](repeating: 0, count: count)
+        var x1 = 0.0, x2 = 0.0, y1 = 0.0, y2 = 0.0
+        for i in 0..<count {
+            let x = Double(noise[i])
+            let y = nb0 * x + nb1 * x1 + nb2 * x2 - na1 * y1 - na2 * y2
+            filtered[i] = Float(y)
+            x2 = x1; x1 = x; y2 = y1; y1 = y
+        }
+
+        // Theoretical gain of H(z) at 16 kHz, evaluated as |H(e^jω)|.
+        // H(e^jω) = N(e^jω) / D(e^jω)
+        // P(e^jω) = p0 + p1·e^{-jω} + p2·e^{-2jω}
+        //         = (p0 + p1·cos ω + p2·cos 2ω) − j(p1·sin ω + p2·sin 2ω)
+        let testFreq = 16000.0
+        let omega = 2.0 * Double.pi * testFreq / sampleRate
+        func mag2(p0: Double, p1: Double, p2: Double) -> Double {
+            let re = p0 + p1 * cos(omega) + p2 * cos(2 * omega)
+            let im = p1 * sin(omega) + p2 * sin(2 * omega)
+            return re * re + im * im
+        }
+        let theoreticalGainDB = 10.0 * log10(
+            mag2(p0: nb0, p1: nb1, p2: nb2) / mag2(p0: 1.0, p1: na1, p2: na2)
+        )
+
+        // Spectral analysis of both the unfiltered and filtered noise signals.
+        let specA = SpectrumAnalyzer().analyze(channelData: ChannelData(channels: [noise]),    sampleRate: sampleRate)
+        let specB = SpectrumAnalyzer().analyze(channelData: ChannelData(channels: [filtered]), sampleRate: sampleRate)
+
+        guard !specA.averageSpectrum.isEmpty && !specB.averageSpectrum.isEmpty else {
+            return ValidationTestResult(
+                name: "Test 3: Known EQ (high-shelf biquad +6 dB at 4 kHz)",
+                passed: false,
+                details: "Spectrum analyzer returned empty result"
+            )
+        }
+
+        let freqRes = sampleRate / Double(specA.fftSize)
+        let bin = min(specA.averageSpectrum.count - 1, Int(testFreq / freqRes))
+        let measuredGainDB = Double(specB.averageSpectrum[bin]) - Double(specA.averageSpectrum[bin])
+
+        let error = measuredGainDB - theoreticalGainDB
+        let passed = abs(error) < 0.5
         return ValidationTestResult(
-            name: "Test 3: Known EQ (+3 dB shelf at 8 kHz)",
+            name: "Test 3: Known EQ (high-shelf biquad +6 dB at 4 kHz)",
             passed: passed,
-            details: "Spectral diff at 8 kHz: \(String(format: "%.1f", diffAt8k)) dB (expected 3.0 +/- 0.5)"
+            details: String(
+                format: "At %.0f Hz — measured Δ: %.2f dB, theoretical: %.2f dB, error: %.2f dB (tolerance ±0.5 dB)",
+                testFreq, measuredGainDB, theoreticalGainDB, error
+            )
         )
     }
 

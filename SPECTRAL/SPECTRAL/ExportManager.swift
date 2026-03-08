@@ -48,11 +48,19 @@ class ExportManager {
     }
 
     func exportXML(results: [AnalysisResult], primaryId: UUID?) -> String {
+        let primary = results.first { $0.id == primaryId } ?? results.first
+
         var xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
         xml += "<spectral_analysis>\n"
+        if let p = primary {
+            xml += "  <primary>\(escapeXML(p.metadata.fileName))</primary>\n"
+        }
 
         for result in results {
-            xml += "  <file name=\"\(escapeXML(result.metadata.fileName))\">\n"
+            let isPrimary = result.id == primary?.id
+            let role = isPrimary ? "primary" : "comparison"
+            xml += "  <file name=\"\(escapeXML(result.metadata.fileName))\" role=\"\(role)\">\n"
+
             xml += "    <metadata>\n"
             xml += "      <sampleRate>\(result.metadata.sampleRate)</sampleRate>\n"
             xml += "      <channelCount>\(result.metadata.channelCount)</channelCount>\n"
@@ -89,6 +97,30 @@ class ExportManager {
                 xml += "      <minCorrelation>\(String(format: "%.3f", stereo.minimumCorrelation))</minCorrelation>\n"
                 xml += "      <midSideRatio unit=\"dB\">\(String(format: "%.1f", stereo.midSideRatioDB))</midSideRatio>\n"
                 xml += "    </stereo>\n"
+            }
+
+            // Emit <delta> for comparison files so consumers can diff relative to primary
+            // without re-computing. All values are (this - primary); negative = lower than primary.
+            if !isPrimary, let p = primary {
+                let dIntegrated = result.loudness.integratedLUFS      - p.loudness.integratedLUFS
+                let dTP         = result.truePeak.maxTruePeakDBTP     - p.truePeak.maxTruePeakDBTP
+                let dLRA        = result.loudness.loudnessRangeLU     - p.loudness.loudnessRangeLU
+                let dPLR        = result.dynamics.plrDB               - p.dynamics.plrDB
+                let dCrest      = result.dynamics.averageCrestFactor  - p.dynamics.averageCrestFactor
+                let dRMS        = result.dynamics.rmsSummedDBFS       - p.dynamics.rmsSummedDBFS
+                let dCorr       = (result.stereo?.averageCorrelation  ?? 0) - (p.stereo?.averageCorrelation ?? 0)
+
+                xml += "    <delta relative_to=\"\(escapeXML(p.metadata.fileName))\">\n"
+                xml += "      <integrated unit=\"LUFS\" delta=\"\(String(format: "%+.2f", dIntegrated))\"/>\n"
+                xml += "      <truePeak    unit=\"dBTP\" delta=\"\(String(format: "%+.2f", dTP))\"/>\n"
+                xml += "      <lra         unit=\"LU\"   delta=\"\(String(format: "%+.2f", dLRA))\"/>\n"
+                xml += "      <plr         unit=\"dB\"   delta=\"\(String(format: "%+.2f", dPLR))\"/>\n"
+                xml += "      <crestFactor unit=\"dB\"   delta=\"\(String(format: "%+.2f", dCrest))\"/>\n"
+                xml += "      <rms         unit=\"dBFS\" delta=\"\(String(format: "%+.2f", dRMS))\"/>\n"
+                if result.stereo != nil && p.stereo != nil {
+                    xml += "      <correlation delta=\"\(String(format: "%+.3f", dCorr))\"/>\n"
+                }
+                xml += "    </delta>\n"
             }
 
             xml += "  </file>\n"

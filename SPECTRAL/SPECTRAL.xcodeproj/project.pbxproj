@@ -13,6 +13,7 @@
 		A10000040000000000000004 /* AudioFileMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000040000000000000004 /* AudioFileMetadata.swift */; };
 		A10000050000000000000005 /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000050000000000000005 /* ColorExtension.swift */; };
 		A10000060000000000000006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000060000000000000006 /* Assets.xcassets */; };
+		A10000000000000000000022 /* PlatformPresets.json in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000023 /* PlatformPresets.json */; };
 		A10000070000000000000007 /* DecodedAudio.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000080000000000000008 /* DecodedAudio.swift */; };
 		A10000080000000000000008 /* ChannelMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000090000000000000009 /* ChannelMode.swift */; };
 		A10000090000000000000009 /* ChannelData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* ChannelData.swift */; };
@@ -77,6 +78,7 @@
 		A20000000000000000000020 /* ExportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportManager.swift; sourceTree = "<group>"; };
 		A20000000000000000000021 /* ValidationHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationHarness.swift; sourceTree = "<group>"; };
 		A20000000000000000000022 /* ValidationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationView.swift; sourceTree = "<group>"; };
+		A20000000000000000000023 /* PlatformPresets.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = PlatformPresets.json; sourceTree = "<group>"; };
 		A30000010000000000000001 /* SPECTRAL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SPECTRAL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -136,6 +138,7 @@
 				A20000000000000000000022 /* ValidationView.swift */,
 				A20000060000000000000006 /* Assets.xcassets */,
 				A20000070000000000000007 /* Info.plist */,
+				A20000000000000000000023 /* PlatformPresets.json */,
 			);
 			path = SPECTRAL;
 			sourceTree = "<group>";
@@ -207,6 +210,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000060000000000000006 /* Assets.xcassets in Resources */,
+				A10000000000000000000022 /* PlatformPresets.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
