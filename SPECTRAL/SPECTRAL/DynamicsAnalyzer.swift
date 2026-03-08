@@ -11,32 +11,33 @@ struct DynamicsResult: Codable {
     let blockDurationMs: Double
 }
 
-class DynamicsAnalyzer {
+// DynamicsAnalyzer is a struct (value type) so it is automatically Sendable.
+struct DynamicsAnalyzer {
     func analyze(
         channelData: ChannelData,
         loudness: LoudnessResult,
         truePeak: TruePeakResult,
         sampleRate: Double
     ) -> DynamicsResult {
-        // PLR: |truePeakDBTP| - |integratedLUFS|
-        // More precisely: truePeakDBTP - integratedLUFS (both are typically negative)
         let plr = truePeak.maxTruePeakDBTP - loudness.integratedLUFS
 
-        // Crest factor per 3s block, 1s hop (uses sample peak, not oversampled)
+        // Crest factor: compute on the mono sum of all active channels.
+        // Using left-only was wrong for stereo — the right channel was silently ignored.
+        // A mono sum represents overall programme loudness and gives the correct crest value
+        // for multi-channel content without requiring per-channel min/max decisions.
+        let monoSignal = monoSum(channelData.channels)
+
         let blockSize = Int(sampleRate * 3.0)
         let hopSize = Int(sampleRate * 1.0)
         var crestFactors: [Double] = []
 
-        let channel = channelData.left
         var offset = 0
-        while offset + blockSize <= channel.count {
-            let block = Array(channel[offset..<offset + blockSize])
+        while offset + blockSize <= monoSignal.count {
+            let block = Array(monoSignal[offset..<offset + blockSize])
 
-            // Sample peak
             var maxVal: Float = 0
             vDSP_maxmgv(block, 1, &maxVal, vDSP_Length(blockSize))
 
-            // RMS
             var rmsVal: Float = 0
             vDSP_rmsqv(block, 1, &rmsVal, vDSP_Length(blockSize))
 
@@ -84,5 +85,20 @@ class DynamicsAnalyzer {
             rmsSummedDBFS: rmsSummedDBFS,
             blockDurationMs: 1000.0
         )
+    }
+
+    // Average all channels into a single mono signal.
+    private func monoSum(_ channels: [[Float]]) -> [Float] {
+        guard let first = channels.first else { return [] }
+        guard channels.count > 1 else { return first }
+
+        let count = channels.map(\.count).min()!
+        var result = [Float](repeating: 0, count: count)
+        for ch in channels {
+            vDSP_vadd(result, 1, ch, 1, &result, 1, vDSP_Length(count))
+        }
+        var scale = Float(1.0) / Float(channels.count)
+        vDSP_vsmul(result, 1, &scale, &result, 1, vDSP_Length(count))
+        return result
     }
 }

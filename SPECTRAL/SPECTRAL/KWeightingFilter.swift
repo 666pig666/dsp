@@ -1,7 +1,10 @@
 import Foundation
 import Accelerate
 
-class KWeightingFilter {
+// KWeightingFilter is stateful (biquad delay lines) but the pipeline always creates a
+// fresh instance per analyze() call and uses it in exactly one detached Task, so
+// concurrent access never occurs. @unchecked Sendable reflects that guarantee.
+final class KWeightingFilter: @unchecked Sendable {
     private var highShelfState: BiquadState
     private var rlbHighPassState: BiquadState
 

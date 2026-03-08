@@ -11,7 +11,7 @@ struct LoudnessResult: Codable {
     let blockDurationMs: Double
 }
 
-class LoudnessMeter {
+struct LoudnessMeter {
     func measure(kWeightedData: ChannelData, sampleRate: Double) -> LoudnessResult {
         let channels = kWeightedData.channels
         let channelWeights = channels.map { _ in 1.0 } // G=1.0 for L, R, mono

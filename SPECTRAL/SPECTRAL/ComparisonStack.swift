@@ -59,7 +59,9 @@ class ComparisonStack: ObservableObject {
         }
     }
 
-    static let fileColors: [UInt] = [0xFFFFFF, 0x00D4FF, 0xFF00FF, 0xFFB800]
+    // 0xFF00FF (pure magenta) is too easily confused with cyan under deuteranopia.
+    // Spec specifies 0xFF3399 (pink-magenta) for file C.
+    static let fileColors: [UInt] = [0xFFFFFF, 0x00D4FF, 0xFF3399, 0xFFB800]
 }
 
 struct ComparisonDelta {

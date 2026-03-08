@@ -1,18 +1,17 @@
 import Foundation
 import CryptoKit
 
+// AnalysisPipeline keeps @MainActor for @Published properties.
+// All DSP runs in Task.detached so the main thread is never blocked.
+// Each analyzer is a struct (value type, automatically Sendable) so it can be
+// captured by value in detached closures without Sendable violations in Swift 6.
+// KWeightingFilter is final + @unchecked Sendable (created fresh per call, single-task use).
 @MainActor
 class AnalysisPipeline: ObservableObject {
     @Published var progress: Double = 0.0
     @Published var currentStage: String = ""
 
     private let decoder = AudioDecoder()
-    private let kWeightingFilterFactory: (Double) -> KWeightingFilter = { KWeightingFilter(sampleRate: $0) }
-    private let loudnessMeter = LoudnessMeter()
-    private let truePeakMeter = TruePeakMeter()
-    private let spectrumAnalyzer = SpectrumAnalyzer()
-    private let stereoAnalyzer = StereoAnalyzer()
-    private let dynamicsAnalyzer = DynamicsAnalyzer()
     private let cache = AnalysisCache()
 
     func analyze(
@@ -20,75 +19,67 @@ class AnalysisPipeline: ObservableObject {
         channelMode: ChannelMode,
         oversamplingRatio: OversamplingRatio = .x8
     ) async throws -> AnalysisResult {
-        // Check cache
         if let cached = cache.load(url: url, channelMode: channelMode, oversamplingRatio: oversamplingRatio) {
             return cached
         }
 
-        // Stage 1: Decode
-        currentStage = "Decoding audio..."
-        progress = 0.05
+        // Stage 1: Decode (AVAudioFile I/O — runs on calling actor, async by convention)
+        currentStage = "Decoding audio..."; progress = 0.05
         let decoded = try await decoder.decode(url: url)
 
-        // Stage 2: Derive channels
-        currentStage = "Deriving channels..."
-        progress = 0.15
+        // Stage 2: Derive channels (fast, on main actor)
+        currentStage = "Deriving channels..."; progress = 0.15
         let channelData = ChannelDeriver.derive(from: decoded, mode: channelMode)
 
-        // Stage 3: K-weight
-        currentStage = "Applying K-weighting..."
-        progress = 0.25
-        let filter = kWeightingFilterFactory(decoded.sampleRate)
-        let kWeighted = await Task.detached {
-            filter.processChannelData(channelData)
+        // Stage 3–8: DSP — extract all values to locals before crossing actor boundary.
+        // Struct copies (value semantics) are Sendable; KWeightingFilter is @unchecked Sendable.
+        currentStage = "Applying K-weighting..."; progress = 0.25
+        let kFilter = KWeightingFilter(sampleRate: decoded.sampleRate)
+        let kWeighted = await Task.detached { [kFilter, channelData] in
+            kFilter.processChannelData(channelData)
         }.value
 
-        // Stage 4: Loudness
-        currentStage = "Measuring loudness..."
-        progress = 0.40
-        let loudness = await Task.detached {
-            self.loudnessMeter.measure(kWeightedData: kWeighted, sampleRate: decoded.sampleRate)
+        currentStage = "Measuring loudness..."; progress = 0.40
+        let meter = LoudnessMeter()
+        let sr = decoded.sampleRate
+        let loudness = await Task.detached { [meter, kWeighted, sr] in
+            meter.measure(kWeightedData: kWeighted, sampleRate: sr)
         }.value
 
-        // Stage 5: True peak
-        currentStage = "Measuring true peak..."
-        progress = 0.55
-        let truePeakResult = await Task.detached {
-            self.truePeakMeter.measure(channelData: channelData, sampleRate: decoded.sampleRate, ratio: oversamplingRatio)
+        currentStage = "Measuring true peak..."; progress = 0.55
+        let tpMeter = TruePeakMeter()
+        let truePeakResult = await Task.detached { [tpMeter, channelData, sr, oversamplingRatio] in
+            tpMeter.measure(channelData: channelData, sampleRate: sr, ratio: oversamplingRatio)
         }.value
 
-        // Stage 6: Spectrum
-        currentStage = "Analyzing spectrum..."
-        progress = 0.70
-        let spectrum = await Task.detached {
-            self.spectrumAnalyzer.analyze(channelData: channelData, sampleRate: decoded.sampleRate)
+        currentStage = "Analyzing spectrum..."; progress = 0.70
+        let specMeter = SpectrumAnalyzer()
+        let spectrum = await Task.detached { [specMeter, channelData, sr] in
+            specMeter.analyze(channelData: channelData, sampleRate: sr)
         }.value
 
-        // Stage 7: Stereo analysis
-        currentStage = "Analyzing stereo field..."
-        progress = 0.80
+        currentStage = "Analyzing stereo field..."; progress = 0.80
         var stereoResult: StereoResult?
         if channelMode == .stereo, let right = decoded.right {
-            stereoResult = await Task.detached {
-                self.stereoAnalyzer.analyze(left: decoded.left, right: right, sampleRate: decoded.sampleRate)
+            let stereoMeter = StereoAnalyzer()
+            let left = decoded.left
+            stereoResult = await Task.detached { [stereoMeter, left, right, sr] in
+                stereoMeter.analyze(left: left, right: right, sampleRate: sr)
             }.value
         }
 
-        // Stage 8: Dynamics
-        currentStage = "Computing dynamics..."
-        progress = 0.90
-        let dynamics = await Task.detached {
-            self.dynamicsAnalyzer.analyze(
+        currentStage = "Computing dynamics..."; progress = 0.90
+        let dynMeter = DynamicsAnalyzer()
+        let dynamics = await Task.detached { [dynMeter, channelData, loudness, truePeakResult, sr] in
+            dynMeter.analyze(
                 channelData: channelData,
                 loudness: loudness,
                 truePeak: truePeakResult,
-                sampleRate: decoded.sampleRate
+                sampleRate: sr
             )
         }.value
 
-        // Assemble result
-        currentStage = "Complete"
-        progress = 1.0
+        currentStage = "Complete"; progress = 1.0
 
         let result = AnalysisResult(
             id: UUID(),
@@ -104,7 +95,6 @@ class AnalysisPipeline: ObservableObject {
         )
 
         cache.save(result: result, url: url, channelMode: channelMode, oversamplingRatio: oversamplingRatio)
-
         return result
     }
 }
@@ -129,7 +119,17 @@ class AnalysisCache {
             fileSize = 0
         }
 
-        let input = "\(fileName)|\(fileSize)|\(channelMode.rawValue)|\(oversamplingRatio.rawValue)"
+        // Include modification date: two WAV files can share the same filename + size
+        // (identical-length, same bit-depth re-renders), but differ in content.
+        let modDate: Double
+        if let rv = try? url.resourceValues(forKeys: [.contentModificationDateKey]),
+           let date = rv.contentModificationDate {
+            modDate = date.timeIntervalSince1970
+        } else {
+            modDate = 0
+        }
+
+        let input = "\(fileName)|\(fileSize)|\(modDate)|\(channelMode.rawValue)|\(oversamplingRatio.rawValue)"
         let hash = SHA256.hash(data: Data(input.utf8))
         return hash.map { String(format: "%02x", $0) }.joined()
     }

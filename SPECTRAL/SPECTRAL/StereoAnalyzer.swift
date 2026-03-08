@@ -9,7 +9,7 @@ struct StereoResult: Codable {
     let blockDurationMs: Double
 }
 
-class StereoAnalyzer {
+struct StereoAnalyzer {
     func analyze(left: [Float], right: [Float], sampleRate: Double) -> StereoResult? {
         guard !left.isEmpty && !right.isEmpty else { return nil }
 

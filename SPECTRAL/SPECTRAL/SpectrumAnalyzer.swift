@@ -26,9 +26,12 @@ struct SpectrumResult: Codable {
     let spectralBalance: SpectralBalance
 }
 
-class SpectrumAnalyzer {
+struct SpectrumAnalyzer {
     func analyze(channelData: ChannelData, sampleRate: Double, fftSize: Int = 8192) -> SpectrumResult {
-        let channel = channelData.left
+        // Average all active channels into a single mono signal before FFT.
+        // Analysing left-only was wrong for stereo — the right channel's spectral content
+        // was silently discarded. A mono sum correctly represents the overall programme.
+        let channel = monoAverage(channelData.channels)
         let halfFFT = fftSize / 2
         let log2n = vDSP_Length(log2(Double(fftSize)))
 
@@ -242,6 +245,19 @@ class SpectrumAnalyzer {
             highMidDB: toRelDB(bandEnergies[3]),
             highDB: toRelDB(bandEnergies[4])
         )
+    }
+
+    private func monoAverage(_ channels: [[Float]]) -> [Float] {
+        guard let first = channels.first else { return [] }
+        guard channels.count > 1 else { return first }
+        let count = channels.map(\.count).min()!
+        var result = [Float](repeating: 0, count: count)
+        for ch in channels {
+            vDSP_vadd(result, 1, ch, 1, &result, 1, vDSP_Length(count))
+        }
+        var scale = Float(1.0) / Float(channels.count)
+        vDSP_vsmul(result, 1, &scale, &result, 1, vDSP_Length(count))
+        return result
     }
 
     private func emptyResult(fftSize: Int, sampleRate: Double) -> SpectrumResult {
