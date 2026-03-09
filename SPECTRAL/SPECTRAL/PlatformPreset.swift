@@ -3,8 +3,8 @@ import Foundation
 struct PlatformPreset: Codable, Identifiable, Hashable {
     let id: UUID
     var name: String
-    var targetIntegratedLUFS: Double
-    var targetIntegratedTolerance: Double
+    var targetIntegratedLUFS: Double?       // nil = no loudness normalisation target
+    var targetIntegratedTolerance: Double?  // nil when targetIntegratedLUFS is nil
     var maxTruePeakDBTP: Double
     var isBuiltIn: Bool
 
@@ -18,8 +18,8 @@ struct PlatformPreset: Codable, Identifiable, Hashable {
     // internal IDs into a file that developers may hand-edit.
     private struct PresetDTO: Decodable {
         let name: String
-        let targetIntegratedLUFS: Double
-        let targetIntegratedTolerance: Double
+        let targetIntegratedLUFS: Double?
+        let targetIntegratedTolerance: Double?
         let maxTruePeakDBTP: Double
     }
 
@@ -52,12 +52,27 @@ struct PlatformPreset: Codable, Identifiable, Hashable {
                        maxTruePeakDBTP: -1.0, isBuiltIn: true),
         PlatformPreset(id: UUID(), name: "YouTube",
                        targetIntegratedLUFS: -14.0, targetIntegratedTolerance: 1.0,
-                       maxTruePeakDBTP: -1.0, isBuiltIn: true),
+                       maxTruePeakDBTP: -1.5, isBuiltIn: true),
         PlatformPreset(id: UUID(), name: "Amazon Music",
                        targetIntegratedLUFS: -14.0, targetIntegratedTolerance: 1.0,
-                       maxTruePeakDBTP: -2.0, isBuiltIn: true),
+                       maxTruePeakDBTP: -1.0, isBuiltIn: true),
         PlatformPreset(id: UUID(), name: "Tidal",
                        targetIntegratedLUFS: -14.0, targetIntegratedTolerance: 1.0,
+                       maxTruePeakDBTP: -1.0, isBuiltIn: true),
+        PlatformPreset(id: UUID(), name: "Deezer",
+                       targetIntegratedLUFS: -15.0, targetIntegratedTolerance: 1.0,
+                       maxTruePeakDBTP: -1.0, isBuiltIn: true),
+        PlatformPreset(id: UUID(), name: "SoundCloud",
+                       targetIntegratedLUFS: nil, targetIntegratedTolerance: nil,
+                       maxTruePeakDBTP: -1.0, isBuiltIn: true),
+        PlatformPreset(id: UUID(), name: "Bandcamp",
+                       targetIntegratedLUFS: nil, targetIntegratedTolerance: nil,
+                       maxTruePeakDBTP: -2.0, isBuiltIn: true),
+        PlatformPreset(id: UUID(), name: "AES77 Music",
+                       targetIntegratedLUFS: -14.0, targetIntegratedTolerance: 1.0,
+                       maxTruePeakDBTP: -1.0, isBuiltIn: true),
+        PlatformPreset(id: UUID(), name: "AES77 Speech",
+                       targetIntegratedLUFS: -18.0, targetIntegratedTolerance: 1.0,
                        maxTruePeakDBTP: -1.0, isBuiltIn: true),
         PlatformPreset(id: UUID(), name: "EBU R128 Broadcast",
                        targetIntegratedLUFS: -23.0, targetIntegratedTolerance: 0.5,

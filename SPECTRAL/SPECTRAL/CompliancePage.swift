@@ -25,14 +25,19 @@ struct CompliancePage: View {
                 VStack(spacing: 0) {
                     complianceHeader
                     Divider().background(Color(hex: 0x333333))
-                    complianceRow(
-                        metric: "Integrated",
-                        measured: result.loudness.integratedLUFS,
-                        target: selectedPreset.targetIntegratedLUFS,
-                        tolerance: selectedPreset.targetIntegratedTolerance,
-                        unit: "LUFS",
-                        checkType: .withinTolerance
-                    )
+                    if let lufsTarget = selectedPreset.targetIntegratedLUFS,
+                       let tolerance = selectedPreset.targetIntegratedTolerance {
+                        complianceRow(
+                            metric: "Integrated",
+                            measured: result.loudness.integratedLUFS,
+                            target: lufsTarget,
+                            tolerance: tolerance,
+                            unit: "LUFS",
+                            checkType: .withinTolerance
+                        )
+                    } else {
+                        noNormalisationRow
+                    }
                     Divider().background(Color(hex: 0x333333))
                     complianceRow(
                         metric: "True Peak",
@@ -59,6 +64,27 @@ struct CompliancePage: View {
             Text("").frame(width: 30)
         }
         .font(.caption2.bold())
+        .foregroundStyle(Color(hex: 0x888888))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    // Shown for platforms with no loudness normalisation (SoundCloud, Bandcamp).
+    private var noNormalisationRow: some View {
+        HStack {
+            Text("Integrated")
+                .frame(width: 80, alignment: .leading)
+            Text(String(format: "%.1f", result.loudness.integratedLUFS))
+                .frame(width: 70, alignment: .trailing)
+            Text("—")
+                .frame(width: 70, alignment: .trailing)
+            Text("—")
+                .frame(width: 60, alignment: .trailing)
+            Image(systemName: "minus.circle")
+                .foregroundStyle(Color(hex: 0x888888))
+                .frame(width: 30)
+        }
+        .font(.caption.monospacedDigit())
         .foregroundStyle(Color(hex: 0x888888))
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
