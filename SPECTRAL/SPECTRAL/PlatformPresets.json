@@ -15,17 +15,47 @@
     "name": "YouTube",
     "targetIntegratedLUFS": -14.0,
     "targetIntegratedTolerance": 1.0,
-    "maxTruePeakDBTP": -1.0
+    "maxTruePeakDBTP": -1.5
   },
   {
     "name": "Amazon Music",
     "targetIntegratedLUFS": -14.0,
     "targetIntegratedTolerance": 1.0,
-    "maxTruePeakDBTP": -2.0
+    "maxTruePeakDBTP": -1.0
   },
   {
     "name": "Tidal",
     "targetIntegratedLUFS": -14.0,
+    "targetIntegratedTolerance": 1.0,
+    "maxTruePeakDBTP": -1.0
+  },
+  {
+    "name": "Deezer",
+    "targetIntegratedLUFS": -15.0,
+    "targetIntegratedTolerance": 1.0,
+    "maxTruePeakDBTP": -1.0
+  },
+  {
+    "name": "SoundCloud",
+    "targetIntegratedLUFS": null,
+    "targetIntegratedTolerance": null,
+    "maxTruePeakDBTP": -1.0
+  },
+  {
+    "name": "Bandcamp",
+    "targetIntegratedLUFS": null,
+    "targetIntegratedTolerance": null,
+    "maxTruePeakDBTP": -2.0
+  },
+  {
+    "name": "AES77 Music",
+    "targetIntegratedLUFS": -14.0,
+    "targetIntegratedTolerance": 1.0,
+    "maxTruePeakDBTP": -1.0
+  },
+  {
+    "name": "AES77 Speech",
+    "targetIntegratedLUFS": -18.0,
     "targetIntegratedTolerance": 1.0,
     "maxTruePeakDBTP": -1.0
   },
