@@ -69,8 +69,21 @@ struct StereoPage: View {
     }
 
     private func correlationChart(_ stereo: StereoResult) -> some View {
-        let data = stereo.correlationTimeSeries.enumerated().map { (i, val) in
-            CorrelationPoint(time: Double(i) * stereo.blockDurationMs / 1000.0, value: val)
+        let series = stereo.correlationTimeSeries
+        let hopSec = stereo.blockDurationMs / 1000.0
+        let maxPoints = 600
+
+        let data: [CorrelationPoint]
+        if series.count <= maxPoints {
+            data = series.enumerated().map { (i, val) in
+                CorrelationPoint(index: i, time: Double(i) * hopSec, value: val)
+            }
+        } else {
+            let step = Double(series.count - 1) / Double(maxPoints - 1)
+            data = (0..<maxPoints).map { i in
+                let idx = min(Int(Double(i) * step), series.count - 1)
+                return CorrelationPoint(index: i, time: Double(idx) * hopSec, value: series[idx])
+            }
         }
 
         return Chart {
@@ -102,7 +115,7 @@ struct StereoPage: View {
     }
 
     private func correlationColor(_ value: Double) -> Color {
-        if value < 0 { return Color(hex: 0xFF3366) }
+        if value < 0   { return Color(hex: 0xFF3366) }
         if value < 0.5 { return Color(hex: 0xFFB800) }
         return Color(hex: 0x00CC66)
     }
@@ -113,8 +126,10 @@ struct StereoPage: View {
     }
 }
 
+// Index-based identity — stable across SwiftUI re-renders.
 struct CorrelationPoint: Identifiable {
-    let id = UUID()
+    let index: Int
     let time: Double
     let value: Double
+    var id: Int { index }
 }

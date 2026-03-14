@@ -82,8 +82,21 @@ struct DynamicsPage: View {
     }
 
     private var crestChart: some View {
-        let data = result.dynamics.crestFactorTimeSeries.enumerated().map { (i, val) in
-            CrestPoint(time: Double(i) * result.dynamics.blockDurationMs / 1000.0, value: val)
+        let series = result.dynamics.crestFactorTimeSeries
+        let hopSec = result.dynamics.blockDurationMs / 1000.0
+        let maxPoints = 600
+
+        let data: [CrestPoint]
+        if series.count <= maxPoints {
+            data = series.enumerated().map { (i, val) in
+                CrestPoint(index: i, time: Double(i) * hopSec, value: val)
+            }
+        } else {
+            let step = Double(series.count - 1) / Double(maxPoints - 1)
+            data = (0..<maxPoints).map { i in
+                let idx = min(Int(Double(i) * step), series.count - 1)
+                return CrestPoint(index: i, time: Double(idx) * hopSec, value: series[idx])
+            }
         }
 
         return Chart {
@@ -119,14 +132,16 @@ struct DynamicsPage: View {
     private var plrInterpretation: String {
         let plr = result.dynamics.plrDB
         if plr >= 12 { return "Well-preserved headroom" }
-        if plr >= 8 { return "Moderate dynamic range" }
-        if plr >= 6 { return "Limited dynamic range" }
+        if plr >= 8  { return "Moderate dynamic range" }
+        if plr >= 6  { return "Limited dynamic range" }
         return "Aggressive limiting"
     }
 }
 
+// Index-based identity — stable across SwiftUI re-renders.
 struct CrestPoint: Identifiable {
-    let id = UUID()
+    let index: Int
     let time: Double
     let value: Double
+    var id: Int { index }
 }

@@ -49,12 +49,18 @@ struct LoudnessPage: View {
 
     private var loudnessChart: some View {
         let hopMs = result.loudness.blockDurationMs
-        let momentaryData = result.loudness.momentaryTimeSeries.enumerated().map { (i, val) in
-            LoudnessPoint(time: Double(i) * hopMs / 1000.0, value: max(val, -70), series: "Momentary")
-        }
-        let shortTermData = result.loudness.shortTermTimeSeries.enumerated().map { (i, val) in
-            LoudnessPoint(time: Double(i) * 1.0, value: max(val, -70), series: "Short-term")
-        }
+        let maxPoints = 600
+
+        let momentaryData = downsample(result.loudness.momentaryTimeSeries, maxPoints: maxPoints)
+            .enumerated().map { (i, pair) in
+                LoudnessPoint(index: i, time: pair.time * hopMs / 1000.0,
+                              value: max(pair.value, -70), series: "Momentary")
+            }
+        let shortTermData = downsample(result.loudness.shortTermTimeSeries, maxPoints: maxPoints)
+            .enumerated().map { (i, pair) in
+                LoudnessPoint(index: i + maxPoints, time: pair.time,
+                              value: max(pair.value, -70), series: "Short-term")
+            }
 
         return Chart {
             ForEach(momentaryData) { point in
@@ -83,25 +89,40 @@ struct LoudnessPage: View {
             "Short-term": Color(hex: 0x00CC66)
         ])
         .chartYAxis {
-            AxisMarks(position: .leading) { value in
+            AxisMarks(position: .leading) { _ in
                 AxisGridLine().foregroundStyle(Color(hex: 0x333333))
-                AxisValueLabel()
-                    .foregroundStyle(Color(hex: 0x888888))
+                AxisValueLabel().foregroundStyle(Color(hex: 0x888888))
             }
         }
         .chartXAxis {
-            AxisMarks { value in
+            AxisMarks { _ in
                 AxisGridLine().foregroundStyle(Color(hex: 0x333333))
-                AxisValueLabel()
-                    .foregroundStyle(Color(hex: 0x888888))
+                AxisValueLabel().foregroundStyle(Color(hex: 0x888888))
             }
+        }
+    }
+
+    /// Downsample a time series to at most `maxPoints` by picking evenly-spaced indices.
+    private func downsample(_ series: [Double], maxPoints: Int) -> [(time: Double, value: Double)] {
+        guard series.count > maxPoints else {
+            return series.enumerated().map { (time: Double($0.offset), value: $0.element) }
+        }
+        let step = Double(series.count - 1) / Double(maxPoints - 1)
+        return (0..<maxPoints).map { i in
+            let idx = min(Int(Double(i) * step), series.count - 1)
+            return (time: Double(idx), value: series[idx])
         }
     }
 }
 
+// Index-based identity — stable across SwiftUI re-renders.
+// UUID() created a new identity every render, causing SwiftUI to tear down
+// and rebuild every LineMark on each render pass, spiking memory during
+// TabView page transitions on long files.
 struct LoudnessPoint: Identifiable {
-    let id = UUID()
+    let index: Int
     let time: Double
     let value: Double
     let series: String
+    var id: Int { index }
 }

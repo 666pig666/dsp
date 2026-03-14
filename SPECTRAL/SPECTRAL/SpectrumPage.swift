@@ -42,20 +42,23 @@ struct SpectrumPage: View {
     }
 
     private var spectrumChart: some View {
-        let avgData = stride(from: 0, to: result.spectrum.averageSpectrum.count, by: max(1, result.spectrum.averageSpectrum.count / 500)).map { i in
-            SpectrumPoint(
-                frequency: Double(result.spectrum.frequencyAxis[i]),
-                level: Double(result.spectrum.averageSpectrum[i]),
-                series: "Average"
-            )
-        }
-        let peakData = stride(from: 0, to: result.spectrum.peakHoldSpectrum.count, by: max(1, result.spectrum.peakHoldSpectrum.count / 500)).map { i in
-            SpectrumPoint(
-                frequency: Double(result.spectrum.frequencyAxis[i]),
-                level: Double(result.spectrum.peakHoldSpectrum[i]),
-                series: "Peak"
-            )
-        }
+        let maxPts = 500
+        let avgStride = max(1, result.spectrum.averageSpectrum.count / maxPts)
+        let avgData = stride(from: 0, to: result.spectrum.averageSpectrum.count, by: avgStride)
+            .enumerated().map { (i, srcIdx) in
+                SpectrumPoint(index: i,
+                              frequency: Double(result.spectrum.frequencyAxis[srcIdx]),
+                              level: Double(result.spectrum.averageSpectrum[srcIdx]),
+                              series: "Average")
+            }
+        let peakStride = max(1, result.spectrum.peakHoldSpectrum.count / maxPts)
+        let peakData = stride(from: 0, to: result.spectrum.peakHoldSpectrum.count, by: peakStride)
+            .enumerated().map { (i, srcIdx) in
+                SpectrumPoint(index: i + maxPts,
+                              frequency: Double(result.spectrum.frequencyAxis[srcIdx]),
+                              level: Double(result.spectrum.peakHoldSpectrum[srcIdx]),
+                              series: "Peak")
+            }
 
         return Chart {
             ForEach(avgData) { point in
@@ -97,7 +100,7 @@ struct SpectrumPage: View {
 
     private func bandChart(bands: [BandEnergy], title: String) -> some View {
         Chart {
-            ForEach(Array(bands.enumerated()), id: \.offset) { idx, band in
+            ForEach(Array(bands.enumerated()), id: \.offset) { _, band in
                 BarMark(
                     x: .value("Freq", formatFreq(band.centerFrequency)),
                     y: .value("dB", band.energyDB)
@@ -163,9 +166,11 @@ struct SpectrumPage: View {
     }
 }
 
+// Index-based identity — stable across SwiftUI re-renders.
 struct SpectrumPoint: Identifiable {
-    let id = UUID()
+    let index: Int
     let frequency: Double
     let level: Double
     let series: String
+    var id: Int { index }
 }

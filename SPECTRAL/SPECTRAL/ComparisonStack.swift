@@ -52,8 +52,10 @@ class ComparisonStack: ObservableObject {
         let frameCounts = files.map { $0.metadata.frameCount }
         let maxDiff = frameCounts.map { abs($0 - frameCounts[0]) }.max() ?? 0
 
-        if maxDiff > Int64(sampleRate) {
-            alignmentWarning = "Files differ in length by more than 1 second. Comparison may not be meaningful."
+        // Spec Section 12: warn only when files differ by more than 4096 samples.
+        if maxDiff > 4096 {
+            let ms = Int(Double(maxDiff) / sampleRate * 1000)
+            alignmentWarning = "Files differ in length by \(ms) ms. Comparison may not be meaningful."
         } else {
             alignmentWarning = nil
         }

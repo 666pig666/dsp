@@ -14,6 +14,10 @@ class AnalysisPipeline: ObservableObject {
     private let decoder = AudioDecoder()
     private let cache = AnalysisCache()
 
+    func pruneCache() {
+        cache.prune()
+    }
+
     func analyze(
         url: URL,
         channelMode: ChannelMode,
@@ -112,7 +116,7 @@ class AnalysisCache {
     func cacheKey(url: URL, channelMode: ChannelMode, oversamplingRatio: OversamplingRatio) -> String {
         let fileName = url.lastPathComponent
         let fileSize: Int64
-        if let attrs = try? fileManager.attributesOfItem(atPath: url.path),
+        if let attrs = try? fileManager.attributesOfItem(atPath: url.path(percentEncoded: false)),
            let size = attrs[.size] as? Int64 {
             fileSize = size
         } else {

@@ -4,16 +4,22 @@ import UniformTypeIdentifiers
 struct FileImportView: View {
     @StateObject private var viewModel = FileImportViewModel()
     @StateObject private var pipeline = AnalysisPipeline()
-    @State private var analysisResult: AnalysisResult?
+    @StateObject private var comparisonStack = ComparisonStack()
     @State private var channelMode: ChannelMode = .stereo
+    @State private var currentFileURL: URL?
     @State private var showValidation = false
     @State private var versionTapCount = 0
 
     var body: some View {
         NavigationStack {
             Group {
-                if let result = analysisResult {
-                    ResultsView(result: result, channelMode: $channelMode)
+                if let result = comparisonStack.primary {
+                    ResultsView(
+                        result: result,
+                        channelMode: $channelMode,
+                        comparisonStack: comparisonStack,
+                        onAddFile: addComparisonFiles
+                    )
                 } else if pipeline.progress > 0 && pipeline.progress < 1.0 {
                     analysisProgress
                 } else {
@@ -23,7 +29,7 @@ struct FileImportView: View {
             .background(Color(hex: 0x0D0D0D))
             .navigationTitle("SPECTRAL")
             .toolbar {
-                if analysisResult == nil {
+                if comparisonStack.primary == nil {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
                             viewModel.showFileImporter = true
@@ -32,10 +38,11 @@ struct FileImportView: View {
                         }
                     }
                 }
-                if analysisResult != nil {
+                if comparisonStack.primary != nil {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button {
-                            analysisResult = nil
+                            comparisonStack.files.removeAll()
+                            currentFileURL = nil
                         } label: {
                             Image(systemName: "chevron.left")
                         }
@@ -64,9 +71,13 @@ struct FileImportView: View {
                 ValidationView()
             }
             .onChange(of: channelMode) { _, newMode in
-                if let file = viewModel.importedFiles.last {
-                    analyzeFile(url: file.url, mode: newMode)
+                // Re-analyze the currently displayed file, not viewModel.importedFiles.last.
+                if let url = currentFileURL {
+                    analyzeFile(url: url, mode: newMode)
                 }
+            }
+            .onAppear {
+                pipeline.pruneCache()
             }
         }
     }
@@ -142,14 +153,31 @@ struct FileImportView: View {
         .scrollContentBackground(.hidden)
     }
 
+    /// Analyze a file and set it as the primary (clears comparison stack).
     private func analyzeFile(url: URL, mode: ChannelMode) {
+        currentFileURL = url
         Task {
             do {
                 let result = try await pipeline.analyze(url: url, channelMode: mode)
-                analysisResult = result
+                comparisonStack.files = [result]
             } catch {
                 viewModel.errorMessage = error.localizedDescription
                 viewModel.showError = true
+            }
+        }
+    }
+
+    /// Analyze additional files and add them to the comparison stack.
+    private func addComparisonFiles(urls: [URL]) {
+        for url in urls {
+            Task {
+                do {
+                    let result = try await pipeline.analyze(url: url, channelMode: channelMode)
+                    try? comparisonStack.add(result)
+                } catch {
+                    viewModel.errorMessage = error.localizedDescription
+                    viewModel.showError = true
+                }
             }
         }
     }

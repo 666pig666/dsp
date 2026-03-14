@@ -23,23 +23,26 @@ class AudioDecoder {
             throw AudioDecoderError.unsupportedFormat
         }
 
-        let totalFrames = AVAudioFrameCount(audioFile.length)
+        // Keep totalFrames as Int64 to avoid silent UInt32 truncation on files
+        // longer than ~24 hours at 48 kHz. Cast to AVAudioFrameCount only for
+        // the per-chunk read call below.
+        let totalFrames: Int64 = audioFile.length
         let channelCount = Int(format.channelCount)
 
         var leftSamples = [Float]()
-        leftSamples.reserveCapacity(Int(totalFrames))
+        leftSamples.reserveCapacity(Int(min(totalFrames, Int64(Int.max))))
 
         var rightSamples: [Float]? = channelCount > 1 ? [Float]() : nil
-        rightSamples?.reserveCapacity(Int(totalFrames))
+        rightSamples?.reserveCapacity(Int(min(totalFrames, Int64(Int.max))))
 
-        let estimatedPCMBytes = Int64(totalFrames) * Int64(channelCount) * 4
+        let estimatedPCMBytes = totalFrames * Int64(channelCount) * 4
         if estimatedPCMBytes > 200 * 1024 * 1024 {
             throw AudioDecoderError.fileTooLarge
         }
 
-        var framesRead: AVAudioFrameCount = 0
+        var framesRead: Int64 = 0
         while framesRead < totalFrames {
-            let framesToRead = min(chunkSize, totalFrames - framesRead)
+            let framesToRead = AVAudioFrameCount(min(Int64(chunkSize), totalFrames - framesRead))
             guard let buffer = AVAudioPCMBuffer(pcmFormat: processingFormat, frameCapacity: framesToRead) else {
                 throw AudioDecoderError.bufferCreationFailed
             }
@@ -59,7 +62,7 @@ class AudioDecoder {
                 rightSamples?.append(contentsOf: UnsafeBufferPointer(start: rightPointer, count: count))
             }
 
-            framesRead += framesToRead
+            framesRead += Int64(framesToRead)
         }
 
         let metadata = AudioFileMetadata(
@@ -68,7 +71,7 @@ class AudioDecoder {
             url: url,
             sampleRate: format.sampleRate,
             channelCount: channelCount,
-            frameCount: Int64(totalFrames),
+            frameCount: totalFrames,
             duration: Double(totalFrames) / format.sampleRate,
             formatDescription: String(describing: format)
         )

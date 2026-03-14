@@ -58,7 +58,7 @@ struct ComparisonPillBar: View {
 }
 
 struct ComparisonSummaryTable: View {
-    let stack: ComparisonStack
+    @ObservedObject var stack: ComparisonStack
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -74,10 +74,10 @@ struct ComparisonSummaryTable: View {
                         .foregroundStyle(Color(hex: 0xE0E0E0))
 
                     HStack(spacing: 12) {
-                        deltaItem("LUFS", delta.deltaIntegratedLUFS)
-                        deltaItem("TP", delta.deltaTruePeakDBTP)
-                        deltaItem("LRA", delta.deltaLRA)
-                        deltaItem("PLR", delta.deltaPLR)
+                        deltaItem("LUFS", delta.deltaIntegratedLUFS, direction: .neutral)
+                        deltaItem("TP",   delta.deltaTruePeakDBTP,   direction: .lowerBetter)
+                        deltaItem("LRA",  delta.deltaLRA,             direction: .higherBetter)
+                        deltaItem("PLR",  delta.deltaPLR,             direction: .higherBetter)
                     }
                 }
                 .padding(8)
@@ -87,14 +87,26 @@ struct ComparisonSummaryTable: View {
         }
     }
 
-    private func deltaItem(_ label: String, _ value: Double) -> some View {
-        VStack(spacing: 2) {
+    private enum MetricDirection { case higherBetter, lowerBetter, neutral }
+
+    private func deltaItem(_ label: String, _ value: Double, direction: MetricDirection) -> some View {
+        let color: Color
+        if value == 0 || direction == .neutral {
+            color = Color(hex: 0xE0E0E0)
+        } else if direction == .higherBetter {
+            color = value > 0 ? Color(hex: 0x00CC66) : Color(hex: 0xFF3366)
+        } else {
+            // lowerBetter: negative delta = lower than primary = good
+            color = value < 0 ? Color(hex: 0x00CC66) : Color(hex: 0xFF3366)
+        }
+
+        return VStack(spacing: 2) {
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(Color(hex: 0x888888))
             Text(String(format: "%+.1f", value))
                 .font(.caption.monospacedDigit())
-                .foregroundStyle(value > 0 ? Color(hex: 0xFF3366) : (value < 0 ? Color(hex: 0x00CC66) : Color(hex: 0xE0E0E0)))
+                .foregroundStyle(color)
         }
     }
 }
