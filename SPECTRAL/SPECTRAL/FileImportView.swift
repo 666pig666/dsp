@@ -219,14 +219,20 @@ private struct WaveformAnimation: View {
 
     var body: some View {
         Canvas { ctx, size in
-            let mid = size.height / 2
+            let mid: CGFloat = size.height / 2
             var path = Path()
             path.move(to: CGPoint(x: 0, y: mid))
-            for x in stride(from: 0.0, through: size.width, by: 1.0) {
-                let y = mid + 2.5 * sin((x / size.width) * 2 * .pi * 4 + phase)
+            let step: CGFloat = 1.0
+            var x: CGFloat = 0
+            while x <= size.width {
+                let normalized = x / size.width
+                let angle = normalized * 2.0 * CGFloat.pi * 4.0 + CGFloat(phase)
+                let y = mid + 2.5 * sin(angle)
                 path.addLine(to: CGPoint(x: x, y: y))
+                x += step
             }
-            ctx.stroke(path, with: .color(Theme.accent.opacity(0.4)), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+            let style = StrokeStyle(lineWidth: 1.5, lineCap: .round)
+            ctx.stroke(path, with: .color(Theme.accent.opacity(0.4)), style: style)
         }
         .onAppear {
             withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
