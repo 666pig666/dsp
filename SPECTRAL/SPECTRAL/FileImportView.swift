@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 struct FileImportView: View {
     @StateObject private var viewModel = FileImportViewModel()
@@ -8,7 +9,6 @@ struct FileImportView: View {
     @State private var channelMode: ChannelMode = .stereo
     @State private var currentFileURL: URL?
     @State private var showValidation = false
-    @State private var versionTapCount = 0
 
     var body: some View {
         NavigationStack {
@@ -26,7 +26,7 @@ struct FileImportView: View {
                     mainContent
                 }
             }
-            .background(Color(hex: 0x0D0D0D))
+            .background(Theme.bg1)
             .navigationTitle("SPECTRAL")
             .toolbar {
                 if comparisonStack.primary == nil {
@@ -36,6 +36,7 @@ struct FileImportView: View {
                         } label: {
                             Image(systemName: "plus")
                         }
+                        .tint(Theme.accent)
                     }
                 }
                 if comparisonStack.primary != nil {
@@ -46,6 +47,7 @@ struct FileImportView: View {
                         } label: {
                             Image(systemName: "chevron.left")
                         }
+                        .tint(Theme.accent)
                     }
                 }
             }
@@ -71,7 +73,6 @@ struct FileImportView: View {
                 ValidationView()
             }
             .onChange(of: channelMode) { _, newMode in
-                // Re-analyze the currently displayed file, not viewModel.importedFiles.last.
                 if let url = currentFileURL {
                     analyzeFile(url: url, mode: newMode)
                 }
@@ -92,53 +93,78 @@ struct FileImportView: View {
         }
     }
 
+    // MARK: - Analysis progress bar
+
     private var analysisProgress: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Spacer()
-            ProgressView(value: pipeline.progress)
-                .tint(Color(hex: 0x00D4FF))
-                .frame(width: 200)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Theme.bg3)
+                        .frame(height: 4)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Theme.accent)
+                        .frame(width: geo.size.width * max(0, min(1, pipeline.progress)), height: 4)
+                        .animation(.easeInOut(duration: 0.3), value: pipeline.progress)
+                }
+            }
+            .frame(height: 4)
+            .padding(.horizontal, 48)
             Text(pipeline.currentStage)
-                .font(.caption)
-                .foregroundStyle(Color(hex: 0x888888))
+                .font(.system(size: 11, weight: .regular))
+                .foregroundStyle(Theme.textSecondary)
             Spacer()
         }
+        .background(Theme.bg1)
     }
 
+    // MARK: - Empty state
+
     private var emptyState: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             Spacer()
-            Image(systemName: "waveform.badge.magnifyingglass")
-                .font(.system(size: 64))
-                .foregroundStyle(Color(hex: 0x00D4FF))
-            Text("No Audio Files")
-                .font(.title2)
-                .foregroundStyle(Color(hex: 0xE0E0E0))
-            Text("Import audio files to begin analysis")
-                .font(.subheadline)
-                .foregroundStyle(Color(hex: 0x888888))
+
+            WaveformAnimation()
+                .frame(width: 200, height: 24)
+
+            Text("SPECTRAL")
+                .font(.system(size: 28, weight: .bold, design: .default))
+                .tracking(3.0)
+                .foregroundStyle(Theme.textPrimary)
+
+            Text("Audio Analysis Engine")
+                .font(.system(size: 13, weight: .regular))
+                .foregroundStyle(Theme.textSecondary)
+
             Button {
                 viewModel.showFileImporter = true
             } label: {
-                Label("Import Audio File", systemImage: "doc.badge.plus")
-                    .font(.headline)
-                    .padding(.horizontal, 24)
+                Text("IMPORT FILE")
+                    .font(.system(size: 13, weight: .semibold))
+                    .tracking(1.5)
+                    .foregroundStyle(Theme.bg0)
+                    .padding(.horizontal, 28)
                     .padding(.vertical, 12)
+                    .background(Theme.accent)
+                    .clipShape(Capsule())
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Color(hex: 0x00D4FF))
+            .buttonStyle(.plain)
+
             Spacer()
 
-            // Version label with hidden developer mode trigger
             Text("SPECTRAL v1.0")
-                .font(.caption2)
-                .foregroundStyle(Color(hex: 0x333333))
+                .font(.system(size: 10, weight: .regular, design: .monospaced))
+                .foregroundStyle(Theme.textTertiary)
                 .onTapGesture(count: 3) {
                     showValidation = true
                 }
+                .padding(.bottom, 8)
         }
         .frame(maxWidth: .infinity)
     }
+
+    // MARK: - File list
 
     private var fileList: some View {
         List {
@@ -148,18 +174,22 @@ struct FileImportView: View {
                 } label: {
                     MetadataRow(metadata: file)
                 }
+                .buttonStyle(.plain)
             }
         }
         .scrollContentBackground(.hidden)
+        .background(Theme.bg1)
     }
 
-    /// Analyze a file and set it as the primary (clears comparison stack).
+    // MARK: - Actions
+
     private func analyzeFile(url: URL, mode: ChannelMode) {
         currentFileURL = url
         Task {
             do {
                 let result = try await pipeline.analyze(url: url, channelMode: mode)
                 comparisonStack.files = [result]
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
             } catch {
                 viewModel.errorMessage = error.localizedDescription
                 viewModel.showError = true
@@ -167,7 +197,6 @@ struct FileImportView: View {
         }
     }
 
-    /// Analyze additional files and add them to the comparison stack.
     private func addComparisonFiles(urls: [URL]) {
         for url in urls {
             Task {
@@ -183,56 +212,68 @@ struct FileImportView: View {
     }
 }
 
+// MARK: - WaveformAnimation
+
+private struct WaveformAnimation: View {
+    @State private var phase: Double = 0
+
+    var body: some View {
+        Canvas { ctx, size in
+            let mid = size.height / 2
+            var path = Path()
+            path.move(to: CGPoint(x: 0, y: mid))
+            for x in stride(from: 0.0, through: size.width, by: 1.0) {
+                let y = mid + 2.5 * sin((x / size.width) * 2 * .pi * 4 + phase)
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+            ctx.stroke(path, with: .color(Theme.accent.opacity(0.4)), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+                phase = 2 * .pi
+            }
+        }
+    }
+}
+
+// MARK: - MetadataRow
+
 struct MetadataRow: View {
     let metadata: AudioFileMetadata
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(metadata.fileName)
-                .font(.headline)
-                .foregroundStyle(Color(hex: 0xE0E0E0))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.textPrimary)
 
-            HStack(spacing: 16) {
-                metadataItem(label: "Sample Rate", value: formatSampleRate(metadata.sampleRate))
-                metadataItem(label: "Channels", value: metadata.channelCount == 1 ? "Mono" : "Stereo")
+            HStack(spacing: 6) {
+                metadataPill(formatSampleRate(metadata.sampleRate))
+                metadataPill(metadata.channelCount == 1 ? "Mono" : "Stereo")
+                metadataPill(formatDuration(metadata.duration))
             }
-
-            HStack(spacing: 16) {
-                metadataItem(label: "Duration", value: formatDuration(metadata.duration))
-                metadataItem(label: "Frames", value: "\(metadata.frameCount)")
-            }
-
-            Text(metadata.formatDescription)
-                .font(.caption2)
-                .foregroundStyle(Color(hex: 0x888888))
-                .lineLimit(2)
         }
-        .padding(.vertical, 4)
-        .listRowBackground(Color(hex: 0x1A1A2E))
+        .padding(.vertical, 6)
+        .listRowBackground(Theme.bg2)
     }
 
-    private func metadataItem(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(Color(hex: 0x888888))
-            Text(value)
-                .font(.subheadline)
-                .foregroundStyle(Color(hex: 0xE0E0E0))
-        }
+    private func metadataPill(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10, weight: .regular, design: .monospaced))
+            .foregroundStyle(Theme.textSecondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Theme.bg3)
+            .clipShape(Capsule())
     }
 
     private func formatSampleRate(_ rate: Double) -> String {
-        if rate >= 1000 {
-            return String(format: "%.1f kHz", rate / 1000.0)
-        }
-        return String(format: "%.0f Hz", rate)
+        rate >= 1000 ? String(format: "%.1f kHz", rate / 1000.0) : String(format: "%.0f Hz", rate)
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
         let minutes = Int(seconds) / 60
         let secs = Int(seconds) % 60
-        let ms = Int((seconds - Double(Int(seconds))) * 100)
-        return String(format: "%d:%02d.%02d", minutes, secs, ms)
+        return String(format: "%d:%02d", minutes, secs)
     }
 }

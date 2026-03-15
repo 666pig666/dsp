@@ -7,17 +7,26 @@ struct DynamicsPage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // PLR readout
+                // PLR hero readout
                 VStack(spacing: 4) {
-                    Text("Peak-to-Loudness Ratio")
-                        .font(.caption)
-                        .foregroundStyle(Color(hex: 0x888888))
-                    Text(String(format: "%.1f dB", result.dynamics.plrDB))
-                        .font(.system(size: 42, weight: .bold, design: .monospaced))
-                        .foregroundStyle(Color(hex: 0x00D4FF))
+                    Text("PEAK-TO-LOUDNESS RATIO")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(1.5)
+                        .foregroundStyle(Theme.textTertiary)
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(String(format: "%.1f", result.dynamics.plrDB))
+                            .font(.system(size: 44, weight: .bold, design: .monospaced))
+                            .tracking(-0.5)
+                            .foregroundStyle(Theme.accent)
+                            .contentTransition(.numericText())
+                            .animation(.easeInOut(duration: 0.4), value: result.dynamics.plrDB)
+                        Text("dB")
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
                     Text(plrInterpretation)
-                        .font(.caption)
-                        .foregroundStyle(Color(hex: 0x888888))
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -28,43 +37,47 @@ struct DynamicsPage: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                // Crest factor chart
                 if !result.dynamics.crestFactorTimeSeries.isEmpty {
                     crestChart
                         .frame(height: 200)
                 }
 
-                // RMS readouts
+                // RMS readouts card
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("RMS Levels")
-                        .font(.headline)
-                        .foregroundStyle(Color(hex: 0xE0E0E0))
+                    Text("RMS LEVELS")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(1.5)
+                        .foregroundStyle(Theme.textTertiary)
 
                     ForEach(Array(result.dynamics.rmsPerChannelDBFS.enumerated()), id: \.offset) { idx, rms in
                         let label = result.dynamics.rmsPerChannelDBFS.count == 1 ? "Mono" : (idx == 0 ? "Left" : "Right")
                         HStack {
                             Text(label)
-                                .font(.caption)
-                                .foregroundStyle(Color(hex: 0x888888))
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundStyle(Theme.textSecondary)
                             Spacer()
                             Text(String(format: "%.1f dBFS", rms))
-                                .font(.subheadline.monospacedDigit())
-                                .foregroundStyle(Color(hex: 0xE0E0E0))
+                                .font(.system(size: 20, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(Theme.textPrimary)
                         }
                     }
                     HStack {
                         Text("Summed")
-                            .font(.caption.bold())
-                            .foregroundStyle(Color(hex: 0x888888))
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Theme.textSecondary)
                         Spacer()
                         Text(String(format: "%.1f dBFS", result.dynamics.rmsSummedDBFS))
-                            .font(.subheadline.bold().monospacedDigit())
-                            .foregroundStyle(Color(hex: 0x00D4FF))
+                            .font(.system(size: 20, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(Theme.accent)
                     }
                 }
-                .padding()
-                .background(Color(hex: 0x1A1A2E))
-                .cornerRadius(12)
+                .padding(16)
+                .background(Theme.bg2)
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Theme.bg4).frame(height: 1)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 4)
             }
             .padding()
         }
@@ -73,11 +86,12 @@ struct DynamicsPage: View {
     private func readout(_ label: String, _ value: String) -> some View {
         VStack(spacing: 4) {
             Text(label)
-                .font(.caption2)
-                .foregroundStyle(Color(hex: 0x888888))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Theme.textTertiary)
             Text(value)
-                .font(.title3.bold().monospacedDigit())
-                .foregroundStyle(Color(hex: 0xE0E0E0))
+                .font(.system(size: 20, weight: .semibold, design: .monospaced))
+                .foregroundStyle(Theme.textPrimary)
+                .contentTransition(.numericText())
         }
     }
 
@@ -105,26 +119,30 @@ struct DynamicsPage: View {
                     x: .value("Time", point.time),
                     y: .value("Crest", point.value)
                 )
-                .foregroundStyle(Color(hex: 0x00D4FF))
+                .foregroundStyle(Theme.chartCrest)
                 .lineStyle(StrokeStyle(lineWidth: 1.5))
             }
             RuleMark(y: .value("8 dB", 8))
-                .foregroundStyle(Color(hex: 0xFFB800))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                .foregroundStyle(Theme.chartThreshold)
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [6, 4]))
             RuleMark(y: .value("14 dB", 14))
-                .foregroundStyle(Color(hex: 0x00CC66))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                .foregroundStyle(Theme.pass)
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [6, 4]))
         }
         .chartYAxis {
             AxisMarks(position: .leading) { _ in
-                AxisGridLine().foregroundStyle(Color(hex: 0x333333))
-                AxisValueLabel().foregroundStyle(Color(hex: 0x888888))
+                AxisGridLine().foregroundStyle(Theme.chartGrid)
+                AxisValueLabel()
+                    .font(.system(size: 9, weight: .regular, design: .monospaced))
+                    .foregroundStyle(Theme.chartAxis)
             }
         }
         .chartXAxis {
             AxisMarks { _ in
-                AxisGridLine().foregroundStyle(Color(hex: 0x333333))
-                AxisValueLabel().foregroundStyle(Color(hex: 0x888888))
+                AxisGridLine().foregroundStyle(Theme.chartGrid)
+                AxisValueLabel()
+                    .font(.system(size: 9, weight: .regular, design: .monospaced))
+                    .foregroundStyle(Theme.chartAxis)
             }
         }
     }

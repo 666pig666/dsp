@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 struct ResultsView: View {
     let result: AnalysisResult
@@ -10,8 +11,10 @@ struct ResultsView: View {
     @State private var currentPage = 0
     @State private var showFileImporter = false
 
-    // Only show modes that are valid for this file's channel count.
-    // Mono files only expose .stereo (which runs as mono pass-through in ChannelDeriver).
+    private let pageTitles = [
+        "SUMMARY", "LOUDNESS", "TRUE PEAK", "SPECTRUM", "STEREO", "DYNAMICS", "COMPLIANCE"
+    ]
+
     private var availableModes: [ChannelMode] {
         result.metadata.channelCount == 1 ? [.stereo] : ChannelMode.allCases
     }
@@ -20,16 +23,23 @@ struct ResultsView: View {
         VStack(spacing: 0) {
             topBar
 
-            // Comparison pill bar + summary table appear above the paged content
-            // whenever two or more files are loaded.
             ComparisonPillBar(stack: comparisonStack)
 
             if comparisonStack.files.count > 1 {
                 ComparisonSummaryTable(stack: comparisonStack)
                     .padding(.horizontal)
                     .padding(.vertical, 8)
-                    .background(Color(hex: 0x0D0D0D))
+                    .background(Theme.bg0)
             }
+
+            // Page title
+            Text(pageTitles[currentPage])
+                .font(.system(size: 11, weight: .semibold, design: .default))
+                .tracking(2.0)
+                .foregroundStyle(Theme.textSecondary)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .animation(.easeIn(duration: 0.3), value: currentPage)
 
             TabView(selection: $currentPage) {
                 SummaryDashboardPage(result: result, navigateTo: $currentPage)
@@ -47,9 +57,16 @@ struct ResultsView: View {
                 CompliancePage(result: result)
                     .tag(6)
             }
-            .tabViewStyle(.page(indexDisplayMode: .automatic))
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .onChange(of: currentPage) { _, _ in
+                UISelectionFeedbackGenerator().selectionChanged()
+            }
+
+            // Custom page indicators
+            pageIndicators
+                .padding(.vertical, 8)
         }
-        .background(Color(hex: 0x0D0D0D))
+        .background(Theme.bg1)
         .fileImporter(
             isPresented: $showFileImporter,
             allowedContentTypes: [UTType.audio],
@@ -61,27 +78,27 @@ struct ResultsView: View {
         }
     }
 
+    // MARK: - Top bar
+
     private var topBar: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(result.metadata.fileName)
-                    .font(.headline)
-                    .foregroundStyle(Color(hex: 0xE0E0E0))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
                     .lineLimit(1)
             }
 
             Spacer()
 
-            // Channel mode picker, filtered to modes valid for this file.
             Picker("Mode", selection: $channelMode) {
                 ForEach(availableModes, id: \.self) { mode in
                     Text(mode.rawValue).tag(mode)
                 }
             }
             .pickerStyle(.menu)
-            .tint(Color(hex: 0x00D4FF))
+            .tint(Theme.accent)
 
-            // Export menu — CSV and XML via system share sheet.
             Menu {
                 let exporter = ExportManager()
                 ShareLink(
@@ -97,20 +114,36 @@ struct ResultsView: View {
             } label: {
                 Image(systemName: "square.and.arrow.up")
                     .font(.title3)
-                    .tint(Color(hex: 0x00D4FF))
+                    .tint(Theme.accent)
             }
 
-            // Add comparison file.
             Button {
                 showFileImporter = true
             } label: {
                 Image(systemName: "plus.circle")
                     .font(.title3)
             }
-            .tint(Color(hex: 0x00D4FF))
+            .tint(Theme.accent)
         }
         .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(Color(hex: 0x1A1A2E))
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+        .environment(\.colorScheme, .dark)
+    }
+
+    // MARK: - Custom page indicators
+
+    private var pageIndicators: some View {
+        HStack(spacing: 6) {
+            ForEach(0..<7, id: \.self) { i in
+                Circle()
+                    .fill(i == currentPage ? Theme.accent : Color(hex: 0x3A3A4A))
+                    .frame(
+                        width:  i == currentPage ? 8 : 6,
+                        height: i == currentPage ? 8 : 6
+                    )
+                    .animation(.easeInOut(duration: 0.2), value: currentPage)
+            }
+        }
     }
 }
