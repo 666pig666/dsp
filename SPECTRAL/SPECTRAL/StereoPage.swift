@@ -14,13 +14,13 @@ struct StereoPage: View {
                         Spacer()
                         Image(systemName: "speaker.wave.2")
                             .font(.system(size: 48))
-                            .foregroundStyle(Color(hex: 0x888888))
+                            .foregroundStyle(Theme.textSecondary)
                         Text("Stereo mode required")
-                            .font(.title3)
-                            .foregroundStyle(Color(hex: 0x888888))
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(Theme.textSecondary)
                         Text("Select Stereo channel mode to view stereo analysis.")
-                            .font(.caption)
-                            .foregroundStyle(Color(hex: 0x888888))
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundStyle(Theme.textTertiary)
                         Spacer()
                     }
                     .frame(maxWidth: .infinity)
@@ -32,36 +32,39 @@ struct StereoPage: View {
 
     @ViewBuilder
     private func stereoContent(_ stereo: StereoResult) -> some View {
-        // Readouts
         HStack(spacing: 20) {
             VStack(spacing: 4) {
-                Text("Avg Correlation")
-                    .font(.caption)
-                    .foregroundStyle(Color(hex: 0x888888))
+                Text("AVG CORRELATION")
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(1.5)
+                    .foregroundStyle(Theme.textTertiary)
                 Text(String(format: "%.3f", stereo.averageCorrelation))
-                    .font(.title.bold().monospacedDigit())
+                    .font(.system(size: 44, weight: .bold, design: .monospaced))
+                    .tracking(-0.5)
                     .foregroundStyle(correlationColor(stereo.averageCorrelation))
+                    .contentTransition(.numericText())
+                    .animation(.easeInOut(duration: 0.4), value: stereo.averageCorrelation)
             }
             VStack(spacing: 4) {
-                Text("Min Correlation")
-                    .font(.caption)
-                    .foregroundStyle(Color(hex: 0x888888))
+                Text("MIN")
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(1.5)
+                    .foregroundStyle(Theme.textTertiary)
                 Text(String(format: "%.3f", stereo.minimumCorrelation))
-                    .font(.title2.bold().monospacedDigit())
+                    .font(.system(size: 20, weight: .semibold, design: .monospaced))
                     .foregroundStyle(correlationColor(stereo.minimumCorrelation))
-            }
-            VStack(spacing: 4) {
-                Text("M/S Ratio")
-                    .font(.caption)
-                    .foregroundStyle(Color(hex: 0x888888))
+                Text("M/S RATIO")
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(1.5)
+                    .foregroundStyle(Theme.textTertiary)
+                    .padding(.top, 8)
                 Text(msRatioText(stereo.midSideRatioDB))
-                    .font(.title2.bold().monospacedDigit())
-                    .foregroundStyle(Color(hex: 0xE0E0E0))
+                    .font(.system(size: 20, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Theme.textPrimary)
             }
         }
         .frame(maxWidth: .infinity)
 
-        // Correlation over time
         if !stereo.correlationTimeSeries.isEmpty {
             correlationChart(stereo)
                 .frame(height: 250)
@@ -92,32 +95,36 @@ struct StereoPage: View {
                     x: .value("Time", point.time),
                     y: .value("Correlation", point.value)
                 )
-                .foregroundStyle(Color(hex: 0x00D4FF))
+                .foregroundStyle(Theme.chartShortTerm)
                 .lineStyle(StrokeStyle(lineWidth: 1.5))
             }
             RuleMark(y: .value("Zero", 0))
-                .foregroundStyle(Color(hex: 0x888888))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                .foregroundStyle(Theme.chartAxis)
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [6, 4]))
         }
         .chartYScale(domain: -1...1)
         .chartYAxis {
             AxisMarks(position: .leading) { _ in
-                AxisGridLine().foregroundStyle(Color(hex: 0x333333))
-                AxisValueLabel().foregroundStyle(Color(hex: 0x888888))
+                AxisGridLine().foregroundStyle(Theme.chartGrid)
+                AxisValueLabel()
+                    .font(.system(size: 9, weight: .regular, design: .monospaced))
+                    .foregroundStyle(Theme.chartAxis)
             }
         }
         .chartXAxis {
             AxisMarks { _ in
-                AxisGridLine().foregroundStyle(Color(hex: 0x333333))
-                AxisValueLabel().foregroundStyle(Color(hex: 0x888888))
+                AxisGridLine().foregroundStyle(Theme.chartGrid)
+                AxisValueLabel()
+                    .font(.system(size: 9, weight: .regular, design: .monospaced))
+                    .foregroundStyle(Theme.chartAxis)
             }
         }
     }
 
     private func correlationColor(_ value: Double) -> Color {
-        if value < 0   { return Color(hex: 0xFF3366) }
-        if value < 0.5 { return Color(hex: 0xFFB800) }
-        return Color(hex: 0x00CC66)
+        if value < 0   { return Theme.error }
+        if value < 0.5 { return Theme.warning }
+        return Theme.pass
     }
 
     private func msRatioText(_ ratio: Double) -> String {

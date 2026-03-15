@@ -1,22 +1,21 @@
 import SwiftUI
+import UIKit
 
 struct SummaryDashboardPage: View {
     let result: AnalysisResult
     @Binding var navigateTo: Int
 
     private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
+        GridItem(.flexible(), spacing: 10),
+        GridItem(.flexible(), spacing: 10)
     ]
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Metadata section
-                metadataSection
+            VStack(alignment: .leading, spacing: 0) {
+                metadataBar
 
-                // Metric cards
-                LazyVGrid(columns: columns, spacing: 12) {
+                LazyVGrid(columns: columns, spacing: 10) {
                     MetricCard(
                         title: "Integrated",
                         value: String(format: "%.1f", result.loudness.integratedLUFS),
@@ -25,7 +24,6 @@ struct SummaryDashboardPage: View {
                         targetPage: 1,
                         navigateTo: $navigateTo
                     )
-
                     MetricCard(
                         title: "True Peak",
                         value: String(format: "%.1f", result.truePeak.maxTruePeakDBTP),
@@ -34,7 +32,6 @@ struct SummaryDashboardPage: View {
                         targetPage: 2,
                         navigateTo: $navigateTo
                     )
-
                     MetricCard(
                         title: "LRA",
                         value: String(format: "%.1f", result.loudness.loudnessRangeLU),
@@ -43,7 +40,6 @@ struct SummaryDashboardPage: View {
                         targetPage: 1,
                         navigateTo: $navigateTo
                     )
-
                     MetricCard(
                         title: "PLR",
                         value: String(format: "%.1f", result.dynamics.plrDB),
@@ -52,7 +48,6 @@ struct SummaryDashboardPage: View {
                         targetPage: 5,
                         navigateTo: $navigateTo
                     )
-
                     if let stereo = result.stereo {
                         MetricCard(
                             title: "Correlation",
@@ -63,7 +58,6 @@ struct SummaryDashboardPage: View {
                             navigateTo: $navigateTo
                         )
                     }
-
                     MetricCard(
                         title: "Crest Factor",
                         value: String(format: "%.1f", result.dynamics.averageCrestFactor),
@@ -73,52 +67,58 @@ struct SummaryDashboardPage: View {
                         navigateTo: $navigateTo
                     )
                 }
+                .padding(16)
             }
-            .padding()
         }
+        .background(Theme.bg1)
     }
 
-    private var metadataSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
+    // MARK: - Metadata bar
+
+    private var metadataBar: some View {
+        HStack(spacing: 0) {
             Text(result.metadata.fileName)
-                .font(.title3.bold())
-                .foregroundStyle(Color(hex: 0xE0E0E0))
-
-            HStack(spacing: 16) {
-                Text(formatSampleRate(result.metadata.sampleRate))
-                Text(result.metadata.channelCount == 1 ? "Mono" : "Stereo")
-                Text(formatDuration(result.metadata.duration))
-            }
-            .font(.caption)
-            .foregroundStyle(Color(hex: 0x888888))
+                .foregroundStyle(Theme.textPrimary)
+            Text(" · \(formatSampleRate(result.metadata.sampleRate))")
+            Text(" · \(result.metadata.channelCount == 1 ? "Mono" : "Stereo")")
+            Text(" · \(formatDuration(result.metadata.duration))")
         }
+        .font(.system(size: 11, weight: .regular, design: .monospaced))
+        .foregroundStyle(Theme.textSecondary)
+        .lineLimit(1)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.bg0)
     }
+
+    // MARK: - Status helpers
 
     private var loudnessStatus: MetricStatus {
-        let lufs = result.loudness.integratedLUFS
-        if lufs > -9 { return .error }
-        if lufs > -11 { return .warning }
+        let v = result.loudness.integratedLUFS
+        if v > -9  { return .error }
+        if v > -11 { return .warning }
         return .pass
     }
 
     private var truePeakStatus: MetricStatus {
-        let tp = result.truePeak.maxTruePeakDBTP
-        if tp > -1.0 { return .error }
-        if tp > -2.0 { return .warning }
+        let v = result.truePeak.maxTruePeakDBTP
+        if v > -1.0 { return .error }
+        if v > -2.0 { return .warning }
         return .pass
     }
 
     private var plrStatus: MetricStatus {
-        let plr = result.dynamics.plrDB
-        if plr < 6 { return .warning }
+        result.dynamics.plrDB < 6 ? .warning : .pass
+    }
+
+    private func correlationStatus(_ c: Double) -> MetricStatus {
+        if c < 0   { return .error }
+        if c < 0.5 { return .warning }
         return .pass
     }
 
-    private func correlationStatus(_ corr: Double) -> MetricStatus {
-        if corr < 0 { return .error }
-        if corr < 0.5 { return .warning }
-        return .pass
-    }
+    // MARK: - Formatters
 
     private func formatSampleRate(_ rate: Double) -> String {
         rate >= 1000 ? String(format: "%.1f kHz", rate / 1000) : String(format: "%.0f Hz", rate)
@@ -131,18 +131,31 @@ struct SummaryDashboardPage: View {
     }
 }
 
+// MARK: - MetricStatus
+
 enum MetricStatus {
     case pass, warning, error, neutral
 
     var color: Color {
         switch self {
-        case .pass: return Color(hex: 0x00CC66)
-        case .warning: return Color(hex: 0xFFB800)
-        case .error: return Color(hex: 0xFF3366)
-        case .neutral: return Color(hex: 0x00D4FF)
+        case .pass:    return Theme.pass
+        case .warning: return Theme.warning
+        case .error:   return Theme.error
+        case .neutral: return Theme.accent
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .pass:    return "Pass"
+        case .warning: return "Warn"
+        case .error:   return "Fail"
+        case .neutral: return "—"
         }
     }
 }
+
+// MARK: - MetricCard
 
 struct MetricCard: View {
     let title: String
@@ -154,31 +167,60 @@ struct MetricCard: View {
 
     var body: some View {
         Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
             navigateTo = targetPage
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(title)
-                        .font(.caption)
-                        .foregroundStyle(Color(hex: 0x888888))
+            VStack(alignment: .leading, spacing: 0) {
+                // Section header — uppercase, tracked, tertiary
+                Text(title.uppercased())
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(1.5)
+                    .foregroundStyle(Theme.textTertiary)
+
+                Spacer(minLength: 8)
+
+                // Hero value — SF Mono 32pt bold
+                Text(value)
+                    .font(.system(size: 32, weight: .bold, design: .monospaced))
+                    .tracking(-0.5)
+                    .foregroundStyle(Theme.textPrimary)
+                    .contentTransition(.numericText())
+                    .animation(.easeInOut(duration: 0.4), value: value)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+
+                // Unit label
+                if !unit.isEmpty {
+                    Text(unit)
+                        .font(.system(size: 11, weight: .regular))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+
+                Spacer(minLength: 10)
+
+                // Status dot + label — bottom-right aligned
+                HStack(spacing: 4) {
                     Spacer()
                     Circle()
                         .fill(status.color)
-                        .frame(width: 8, height: 8)
-                }
-
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(value)
-                        .font(.title2.bold().monospacedDigit())
-                        .foregroundStyle(Color(hex: 0xE0E0E0))
-                    Text(unit)
-                        .font(.caption)
-                        .foregroundStyle(Color(hex: 0x888888))
+                        .frame(width: 6, height: 6)
+                        .shadow(color: status.color.opacity(0.6), radius: 4)
+                    Text(status.label)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(status.color)
                 }
             }
-            .padding(12)
-            .background(Color(hex: 0x1A1A2E))
-            .cornerRadius(12)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.bg2)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(Theme.bg4)
+                    .frame(height: 1)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
     }

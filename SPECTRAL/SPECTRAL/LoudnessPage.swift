@@ -7,14 +7,23 @@ struct LoudnessPage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Primary readout
+                // Primary readout — hero metric
                 VStack(spacing: 4) {
-                    Text("Integrated Loudness")
-                        .font(.caption)
-                        .foregroundStyle(Color(hex: 0x888888))
-                    Text(String(format: "%.1f LUFS", result.loudness.integratedLUFS))
-                        .font(.system(size: 48, weight: .bold, design: .monospaced))
-                        .foregroundStyle(Color(hex: 0x00D4FF))
+                    Text("INTEGRATED LOUDNESS")
+                        .font(.system(size: 11, weight: .semibold))
+                        .tracking(1.5)
+                        .foregroundStyle(Theme.textTertiary)
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(String(format: "%.1f", result.loudness.integratedLUFS))
+                            .font(.system(size: 44, weight: .bold, design: .monospaced))
+                            .tracking(-0.5)
+                            .foregroundStyle(Theme.accent)
+                            .contentTransition(.numericText())
+                            .animation(.easeInOut(duration: 0.4), value: result.loudness.integratedLUFS)
+                        Text("LUFS")
+                            .font(.system(size: 11, weight: .regular))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
                 }
                 .frame(maxWidth: .infinity)
 
@@ -26,7 +35,6 @@ struct LoudnessPage: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                // Loudness over time chart
                 if !result.loudness.momentaryTimeSeries.isEmpty {
                     loudnessChart
                         .frame(height: 250)
@@ -39,11 +47,12 @@ struct LoudnessPage: View {
     private func readout(_ label: String, _ value: String) -> some View {
         VStack(spacing: 4) {
             Text(label)
-                .font(.caption2)
-                .foregroundStyle(Color(hex: 0x888888))
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Theme.textTertiary)
             Text(value)
-                .font(.subheadline.bold().monospacedDigit())
-                .foregroundStyle(Color(hex: 0xE0E0E0))
+                .font(.system(size: 20, weight: .semibold, design: .monospaced))
+                .foregroundStyle(Theme.textPrimary)
+                .contentTransition(.numericText())
         }
     }
 
@@ -69,8 +78,8 @@ struct LoudnessPage: View {
                     y: .value("LUFS", point.value)
                 )
                 .foregroundStyle(by: .value("Series", point.series))
-                .opacity(0.5)
-                .lineStyle(StrokeStyle(lineWidth: 1))
+                .opacity(0.4)
+                .lineStyle(StrokeStyle(lineWidth: 1.0))
             }
             ForEach(shortTermData) { point in
                 LineMark(
@@ -78,31 +87,36 @@ struct LoudnessPage: View {
                     y: .value("LUFS", point.value)
                 )
                 .foregroundStyle(by: .value("Series", point.series))
-                .lineStyle(StrokeStyle(lineWidth: 2))
+                .lineStyle(StrokeStyle(lineWidth: 1.5))
             }
             RuleMark(y: .value("Integrated", result.loudness.integratedLUFS))
-                .foregroundStyle(Color(hex: 0x00D4FF))
-                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 3]))
+                .foregroundStyle(Theme.chartIntegrated)
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
         }
         .chartForegroundStyleScale([
-            "Momentary": Color(hex: 0x888888),
-            "Short-term": Color(hex: 0x00CC66)
+            "Momentary":   Theme.chartMomentary,
+            "Short-term":  Theme.chartShortTerm
         ])
         .chartYAxis {
             AxisMarks(position: .leading) { _ in
-                AxisGridLine().foregroundStyle(Color(hex: 0x333333))
-                AxisValueLabel().foregroundStyle(Color(hex: 0x888888))
+                AxisGridLine()
+                    .foregroundStyle(Theme.chartGrid)
+                AxisValueLabel()
+                    .font(.system(size: 9, weight: .regular, design: .monospaced))
+                    .foregroundStyle(Theme.chartAxis)
             }
         }
         .chartXAxis {
             AxisMarks { _ in
-                AxisGridLine().foregroundStyle(Color(hex: 0x333333))
-                AxisValueLabel().foregroundStyle(Color(hex: 0x888888))
+                AxisGridLine()
+                    .foregroundStyle(Theme.chartGrid)
+                AxisValueLabel()
+                    .font(.system(size: 9, weight: .regular, design: .monospaced))
+                    .foregroundStyle(Theme.chartAxis)
             }
         }
     }
 
-    /// Downsample a time series to at most `maxPoints` by picking evenly-spaced indices.
     private func downsample(_ series: [Double], maxPoints: Int) -> [(time: Double, value: Double)] {
         guard series.count > maxPoints else {
             return series.enumerated().map { (time: Double($0.offset), value: $0.element) }
@@ -116,9 +130,6 @@ struct LoudnessPage: View {
 }
 
 // Index-based identity — stable across SwiftUI re-renders.
-// UUID() created a new identity every render, causing SwiftUI to tear down
-// and rebuild every LineMark on each render pass, spiking memory during
-// TabView page transitions on long files.
 struct LoudnessPoint: Identifiable {
     let index: Int
     let time: Double

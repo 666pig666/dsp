@@ -12,19 +12,34 @@ struct CompliancePage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Preset selector
-                Picker("Platform", selection: $selectedPreset) {
-                    ForEach(PlatformPreset.builtInPresets) { preset in
-                        Text(preset.name).tag(preset)
+                // Horizontal capsule preset selector
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(PlatformPreset.builtInPresets) { preset in
+                            Button {
+                                selectedPreset = preset
+                            } label: {
+                                Text(preset.name)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundStyle(selectedPreset.id == preset.id ? Theme.bg0 : Theme.textSecondary)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(selectedPreset.id == preset.id ? Theme.accent : Theme.bg3)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .animation(.easeInOut(duration: 0.2), value: selectedPreset.id)
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 4)
                 }
-                .pickerStyle(.menu)
-                .tint(Color(hex: 0x00D4FF))
 
-                // Compliance grid
+                // Compliance rows card
                 VStack(spacing: 0) {
                     complianceHeader
-                    Divider().background(Color(hex: 0x333333))
+                    Divider().background(Theme.bg4)
+
                     if let lufsTarget = selectedPreset.targetIntegratedLUFS,
                        let tolerance = selectedPreset.targetIntegratedTolerance {
                         complianceRow(
@@ -38,7 +53,9 @@ struct CompliancePage: View {
                     } else {
                         noNormalisationRow
                     }
-                    Divider().background(Color(hex: 0x333333))
+
+                    Divider().background(Theme.bg4)
+
                     complianceRow(
                         metric: "True Peak",
                         measured: result.truePeak.maxTruePeakDBTP,
@@ -48,52 +65,77 @@ struct CompliancePage: View {
                         checkType: .belowThreshold
                     )
                 }
-                .background(Color(hex: 0x1A1A2E))
-                .cornerRadius(12)
+                .background(Theme.bg2)
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Theme.bg4).frame(height: 1)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 4)
             }
             .padding()
         }
     }
 
+    // MARK: - Header
+
     private var complianceHeader: some View {
         HStack {
-            Text("Metric").frame(width: 80, alignment: .leading)
-            Text("Measured").frame(width: 70, alignment: .trailing)
-            Text("Target").frame(width: 70, alignment: .trailing)
-            Text("Delta").frame(width: 60, alignment: .trailing)
-            Text("").frame(width: 30)
+            Text("METRIC").frame(width: 80, alignment: .leading)
+            Text("MEAS").frame(width: 55, alignment: .trailing)
+            Text("TARGET").frame(width: 55, alignment: .trailing)
+            Text("DELTA").frame(width: 50, alignment: .trailing)
+            Spacer()
+            Text("STATUS").frame(width: 44, alignment: .trailing)
         }
-        .font(.caption2.bold())
-        .foregroundStyle(Color(hex: 0x888888))
-        .padding(.horizontal, 12)
+        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+        .foregroundStyle(Theme.textTertiary)
+        .padding(.horizontal, 14)
         .padding(.vertical, 8)
     }
 
-    // Shown for platforms with no loudness normalisation (SoundCloud, Bandcamp).
+    // MARK: - No normalisation row
+
     private var noNormalisationRow: some View {
-        HStack {
-            Text("Integrated")
-                .frame(width: 80, alignment: .leading)
-            Text(String(format: "%.1f", result.loudness.integratedLUFS))
-                .frame(width: 70, alignment: .trailing)
-            Text("—")
-                .frame(width: 70, alignment: .trailing)
-            Text("—")
-                .frame(width: 60, alignment: .trailing)
-            Image(systemName: "minus.circle")
-                .foregroundStyle(Color(hex: 0x888888))
-                .frame(width: 30)
+        VStack(spacing: 6) {
+            HStack {
+                Text("Integrated")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(width: 80, alignment: .leading)
+                Text(String(format: "%.1f", result.loudness.integratedLUFS))
+                    .frame(width: 55, alignment: .trailing)
+                Text("—")
+                    .frame(width: 55, alignment: .trailing)
+                    .foregroundStyle(Theme.textSecondary)
+                Text("—")
+                    .frame(width: 50, alignment: .trailing)
+                    .foregroundStyle(Theme.textSecondary)
+                Spacer()
+                Text("N/A")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(width: 44, alignment: .trailing)
+            }
+            .font(.system(size: 13, weight: .regular, design: .monospaced))
+            .foregroundStyle(Theme.textPrimary)
+
+            // Empty bar
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Theme.bg4)
+                .frame(height: 6)
         }
-        .font(.caption.monospacedDigit())
-        .foregroundStyle(Color(hex: 0x888888))
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
+
+    // MARK: - Check type
 
     private enum CheckType {
         case withinTolerance
         case belowThreshold
     }
+
+    // MARK: - Compliance row with progress bar
 
     private func complianceRow(
         metric: String,
@@ -105,30 +147,59 @@ struct CompliancePage: View {
     ) -> some View {
         let delta = measured - target
         let passed: Bool
+        let fillFraction: Double
+
         switch checkType {
         case .withinTolerance:
             passed = abs(delta) <= tolerance
+            let overshoot = max(0, abs(delta) - tolerance)
+            fillFraction = max(0, min(1, 1.0 - overshoot / 6.0))
         case .belowThreshold:
             passed = measured <= target
+            let overshoot = max(0, measured - target)
+            fillFraction = max(0, min(1, 1.0 - overshoot / 3.0))
         }
 
-        return HStack {
-            Text(metric)
-                .frame(width: 80, alignment: .leading)
-            Text(String(format: "%.1f", measured))
-                .frame(width: 70, alignment: .trailing)
-            Text(String(format: "%.1f", target))
-                .frame(width: 70, alignment: .trailing)
-            Text(String(format: "%+.1f", delta))
-                .frame(width: 60, alignment: .trailing)
-                .foregroundStyle(passed ? Color(hex: 0x00CC66) : Color(hex: 0xFF3366))
-            Image(systemName: passed ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundStyle(passed ? Color(hex: 0x00CC66) : Color(hex: 0xFF3366))
-                .frame(width: 30)
+        let barColor: Color = passed ? Theme.pass : Theme.error
+        let statusText = passed ? "PASS" : "FAIL"
+
+        return VStack(spacing: 6) {
+            HStack {
+                Text(metric)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(width: 80, alignment: .leading)
+                Text(String(format: "%.1f", measured))
+                    .frame(width: 55, alignment: .trailing)
+                Text(String(format: "%.1f", target))
+                    .frame(width: 55, alignment: .trailing)
+                    .foregroundStyle(Theme.textSecondary)
+                Text(String(format: "%+.1f", delta))
+                    .frame(width: 50, alignment: .trailing)
+                    .foregroundStyle(passed ? Theme.pass : Theme.error)
+                Spacer()
+                Text(statusText)
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(barColor)
+                    .frame(width: 44, alignment: .trailing)
+            }
+            .font(.system(size: 13, weight: .regular, design: .monospaced))
+            .foregroundStyle(Theme.textPrimary)
+
+            // Progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Theme.bg4)
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(barColor)
+                        .frame(width: geo.size.width * fillFraction, height: 6)
+                }
+            }
+            .frame(height: 6)
         }
-        .font(.caption.monospacedDigit())
-        .foregroundStyle(Color(hex: 0xE0E0E0))
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
     }
 }
