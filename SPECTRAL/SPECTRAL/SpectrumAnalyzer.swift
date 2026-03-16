@@ -24,6 +24,10 @@ struct SpectrumResult: Codable {
     let octaveBands: [BandEnergy]
     let thirdOctaveBands: [BandEnergy]
     let spectralBalance: SpectralBalance
+    /// Last up-to-80 FFT magnitude frames, each downsampled to 256 bins, in dBFS.
+    /// Stored chronologically (oldest first). Used by WaterfallView.
+    let waterfallFrames: [[Float]]
+    let waterfallFrameCount: Int
 }
 
 struct SpectrumAnalyzer {
@@ -48,6 +52,14 @@ struct SpectrumAnalyzer {
         var sumSquaredMag = [Double](repeating: 0, count: halfFFT)
         var peakMag = [Float](repeating: 0, count: halfFFT)
         var blockCount = 0
+
+        // Waterfall circular buffer: last 80 frames downsampled to 256 bins
+        let waterfallCapacity = 80
+        let waterfallBins = 256
+        let binsPerGroup = max(1, halfFFT / waterfallBins)
+        var waterfallBuf = [[Float]](repeating: [Float](repeating: -120, count: waterfallBins), count: waterfallCapacity)
+        var waterfallWritePos = 0
+        var waterfallFillCount = 0
 
         var offset = 0
         while offset + fftSize <= channel.count {
@@ -101,6 +113,21 @@ struct SpectrumAnalyzer {
                 }
             }
 
+            // Waterfall: downsample to 256 bins (take max magnitude per group → dBFS)
+            var wFrame = [Float](repeating: -120, count: waterfallBins)
+            for b in 0..<waterfallBins {
+                var maxMag: Float = 0
+                let start = b * binsPerGroup
+                let end = min(start + binsPerGroup, halfFFT)
+                for bin in start..<end {
+                    if magnitude[bin] > maxMag { maxMag = magnitude[bin] }
+                }
+                wFrame[b] = maxMag > 0 ? 20.0 * log10(maxMag) : -120
+            }
+            waterfallBuf[waterfallWritePos] = wFrame
+            waterfallWritePos = (waterfallWritePos + 1) % waterfallCapacity
+            waterfallFillCount = min(waterfallFillCount + 1, waterfallCapacity)
+
             blockCount += 1
             offset += hopSize
         }
@@ -148,6 +175,18 @@ struct SpectrumAnalyzer {
             freqResolution: Double(freqResolution)
         )
 
+        // Reconstruct waterfall frames in chronological order (oldest first)
+        var waterfallFrames = [[Float]]()
+        waterfallFrames.reserveCapacity(waterfallFillCount)
+        if waterfallFillCount < waterfallCapacity {
+            waterfallFrames = Array(waterfallBuf[0..<waterfallFillCount])
+        } else {
+            for i in 0..<waterfallCapacity {
+                let idx = (waterfallWritePos + i) % waterfallCapacity
+                waterfallFrames.append(waterfallBuf[idx])
+            }
+        }
+
         return SpectrumResult(
             averageSpectrum: avgSpectrum,
             peakHoldSpectrum: peakHoldSpectrum,
@@ -155,7 +194,9 @@ struct SpectrumAnalyzer {
             fftSize: fftSize,
             octaveBands: octaveBands,
             thirdOctaveBands: thirdOctaveBands,
-            spectralBalance: spectralBalance
+            spectralBalance: spectralBalance,
+            waterfallFrames: waterfallFrames,
+            waterfallFrameCount: waterfallFillCount
         )
     }
 
@@ -271,7 +312,9 @@ struct SpectrumAnalyzer {
             spectralBalance: SpectralBalance(
                 subDB: -120, lowDB: -120, lowMidDB: -120,
                 highMidDB: -120, highDB: -120
-            )
+            ),
+            waterfallFrames: [],
+            waterfallFrameCount: 0
         )
     }
 }

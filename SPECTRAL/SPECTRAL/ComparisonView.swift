@@ -86,10 +86,10 @@ struct ComparisonSummaryTable: View {
                         .foregroundStyle(Theme.textPrimary)
 
                     HStack(spacing: 12) {
-                        deltaItem("LUFS", delta.deltaIntegratedLUFS)
-                        deltaItem("TP",   delta.deltaTruePeakDBTP)
-                        deltaItem("LRA",  delta.deltaLRA)
-                        deltaItem("PLR",  delta.deltaPLR)
+                        deltaItem("LUFS", delta.deltaIntegratedLUFS, metric: .lufs)
+                        deltaItem("TP",   delta.deltaTruePeakDBTP,   metric: .truePeak)
+                        deltaItem("LRA",  delta.deltaLRA,            metric: .lra)
+                        deltaItem("PLR",  delta.deltaPLR,            metric: .plr)
                     }
                 }
                 .padding(10)
@@ -102,23 +102,31 @@ struct ComparisonSummaryTable: View {
         }
     }
 
-    /// Signed delta coloring per spec:
-    /// + → amber/red (louder/hotter)
-    /// - → green (quieter/more headroom)
-    /// 0 → tertiary
-    private func deltaColor(_ value: Double) -> Color {
-        if abs(value) < 0.05 { return Theme.textTertiary }
-        return value > 0 ? Theme.warning : Theme.pass
-    }
+    // MARK: - Delta items with metric-aware coloring
 
-    private func deltaItem(_ label: String, _ value: Double) -> some View {
+    private func deltaItem(_ label: String, _ value: Double, metric: DeltaMetric) -> some View {
         VStack(spacing: 2) {
             Text(label)
                 .font(.system(size: 9, weight: .regular, design: .monospaced))
                 .foregroundStyle(Theme.textTertiary)
             Text(String(format: "%+.1f", value))
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                .foregroundStyle(deltaColor(value))
+                .foregroundStyle(deltaColor(value, metric: metric))
+        }
+    }
+
+    private enum DeltaMetric {
+        case lufs, truePeak, lra, plr
+    }
+
+    /// Metric-directional delta coloring per spec §3G.
+    private func deltaColor(_ value: Double, metric: DeltaMetric) -> Color {
+        if abs(value) < 0.05 { return Theme.textTertiary }
+        switch metric {
+        case .lufs:    return value > 0 ? Theme.warning : Theme.textTertiary
+        case .truePeak: return value > 0 ? Theme.error  : Theme.pass
+        case .lra:     return Theme.textTertiary
+        case .plr:     return value > 0 ? Theme.pass    : Theme.warning
         }
     }
 }

@@ -1,8 +1,12 @@
 import SwiftUI
-import Charts
 
 struct DynamicsPage: View {
     let result: AnalysisResult
+    var comparisonStack: ComparisonStack? = nil
+
+    private var isComparison: Bool {
+        (comparisonStack?.files.count ?? 0) > 1
+    }
 
     var body: some View {
         ScrollView {
@@ -95,56 +99,64 @@ struct DynamicsPage: View {
         }
     }
 
+    // MARK: - Crest chart
+
     private var crestChart: some View {
-        let series = result.dynamics.crestFactorTimeSeries
-        let hopSec = result.dynamics.blockDurationMs / 1000.0
-        let maxPoints = 600
+        var allSeries  = [CanvasChartSeries]()
+        var legendItems: [(String, Color)]? = nil
 
-        let data: [CrestPoint]
-        if series.count <= maxPoints {
-            data = series.enumerated().map { (i, val) in
-                CrestPoint(index: i, time: Double(i) * hopSec, value: val)
+        if isComparison, let stack = comparisonStack {
+            var items = [(String, Color)]()
+            for (i, file) in stack.files.enumerated() {
+                let series = file.dynamics.crestFactorTimeSeries
+                guard !series.isEmpty else { continue }
+                let color  = Theme.fileColor(i)
+                let name   = String(file.metadata.fileName.prefix(16))
+                let hopSec = file.dynamics.blockDurationMs / 1000.0
+                let maxPts = 600
+                let count  = series.count
+                let step   = max(1.0, Double(count - 1) / Double(maxPts - 1))
+                let maxIdx = min(count, maxPts)
+                let vals  = (0..<maxIdx).map { j in series[min(Int(Double(j) * step), count - 1)] }
+                let times = (0..<maxIdx).map { j -> Double in
+                    Double(min(Int(Double(j) * step), count - 1)) * hopSec
+                }
+                allSeries.append(CanvasChartSeries(
+                    label: name, color: color, values: vals, xValues: times,
+                    lineWidth: i == 0 ? 1.5 : 1.0,
+                    opacity:   i == 0 ? 1.0 : 0.8
+                ))
+                items.append((name, color))
             }
+            legendItems = items
         } else {
-            let step = Double(series.count - 1) / Double(maxPoints - 1)
-            data = (0..<maxPoints).map { i in
-                let idx = min(Int(Double(i) * step), series.count - 1)
-                return CrestPoint(index: i, time: Double(idx) * hopSec, value: series[idx])
+            let series = result.dynamics.crestFactorTimeSeries
+            let hopSec = result.dynamics.blockDurationMs / 1000.0
+            let maxPts = 600
+            let count  = series.count
+            let step   = max(1.0, Double(count - 1) / Double(maxPts - 1))
+            let maxIdx = min(count, maxPts)
+            let vals  = (0..<maxIdx).map { j in series[min(Int(Double(j) * step), count - 1)] }
+            let times = (0..<maxIdx).map { j -> Double in
+                Double(min(Int(Double(j) * step), count - 1)) * hopSec
             }
+            allSeries.append(CanvasChartSeries(
+                label: "Crest", color: Theme.chartCrest,
+                values: vals, xValues: times, lineWidth: 1.5
+            ))
         }
 
-        return Chart {
-            ForEach(data) { point in
-                LineMark(
-                    x: .value("Time", point.time),
-                    y: .value("Crest", point.value)
-                )
-                .foregroundStyle(Theme.chartCrest)
-                .lineStyle(StrokeStyle(lineWidth: 1.5))
-            }
-            RuleMark(y: .value("8 dB", 8))
-                .foregroundStyle(Theme.chartThreshold)
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [6, 4]))
-            RuleMark(y: .value("14 dB", 14))
-                .foregroundStyle(Theme.pass)
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [6, 4]))
-        }
-        .chartYAxis {
-            AxisMarks(position: .leading) { _ in
-                AxisGridLine().foregroundStyle(Theme.chartGrid)
-                AxisValueLabel()
-                    .font(.system(size: 9, weight: .regular, design: .monospaced))
-                    .foregroundStyle(Theme.chartAxis)
-            }
-        }
-        .chartXAxis {
-            AxisMarks { _ in
-                AxisGridLine().foregroundStyle(Theme.chartGrid)
-                AxisValueLabel()
-                    .font(.system(size: 9, weight: .regular, design: .monospaced))
-                    .foregroundStyle(Theme.chartAxis)
-            }
-        }
+        let yHigh = max(20.0, allSeries.flatMap(\.values).max().map { $0 + 3 } ?? 20)
+
+        return CanvasLineChart(
+            series: allSeries,
+            yDomain: 0...yHigh,
+            referenceLines: [
+                CanvasReferenceLine(y: 8,  color: Theme.chartThreshold, dashed: true),
+                CanvasReferenceLine(y: 14, color: Theme.pass,           dashed: true)
+            ],
+            legendItems: legendItems
+        )
     }
 
     private var plrInterpretation: String {

@@ -1,8 +1,14 @@
 import SwiftUI
-import Charts
 
 struct LoudnessPage: View {
     let result: AnalysisResult
+    var comparisonStack: ComparisonStack? = nil
+
+    @State private var showDelta = false
+
+    private var isComparison: Bool {
+        (comparisonStack?.files.count ?? 0) > 1
+    }
 
     var body: some View {
         ScrollView {
@@ -35,6 +41,13 @@ struct LoudnessPage: View {
                 }
                 .frame(maxWidth: .infinity)
 
+                // Delta toggle in comparison mode
+                if isComparison {
+                    HStack(spacing: 8) {
+                        toggleButton("Delta", isOn: $showDelta)
+                    }
+                }
+
                 if !result.loudness.momentaryTimeSeries.isEmpty {
                     loudnessChart
                         .frame(height: 250)
@@ -56,65 +69,151 @@ struct LoudnessPage: View {
         }
     }
 
+    // MARK: - Loudness chart
+
     private var loudnessChart: some View {
-        let hopMs = result.loudness.blockDurationMs
-        let maxPoints = 600
+        if isComparison, let stack = comparisonStack {
+            return AnyView(comparisonLoudnessChart(stack: stack))
+        } else {
+            return AnyView(singleLoudnessChart)
+        }
+    }
 
-        let momentaryData = downsample(result.loudness.momentaryTimeSeries, maxPoints: maxPoints)
-            .enumerated().map { (i, pair) in
-                LoudnessPoint(index: i, time: pair.time * hopMs / 1000.0,
-                              value: max(pair.value, -70), series: "Momentary")
-            }
-        let shortTermData = downsample(result.loudness.shortTermTimeSeries, maxPoints: maxPoints)
-            .enumerated().map { (i, pair) in
-                LoudnessPoint(index: i + maxPoints, time: pair.time,
-                              value: max(pair.value, -70), series: "Short-term")
-            }
+    private var singleLoudnessChart: some View {
+        let hopSec = result.loudness.blockDurationMs / 1000.0
+        let maxPts = 600
 
-        return Chart {
-            ForEach(momentaryData) { point in
-                LineMark(
-                    x: .value("Time", point.time),
-                    y: .value("LUFS", point.value)
-                )
-                .foregroundStyle(by: .value("Series", point.series))
-                .opacity(0.4)
-                .lineStyle(StrokeStyle(lineWidth: 1.0))
+        let momentaryVals = downsample(result.loudness.momentaryTimeSeries, maxPoints: maxPts)
+            .map { max($0.value, -70) }
+        let momentaryTimes = downsample(result.loudness.momentaryTimeSeries, maxPoints: maxPts)
+            .map { $0.time * hopSec }
+
+        let shortTermVals = downsample(result.loudness.shortTermTimeSeries, maxPoints: maxPts)
+            .map { max($0.value, -70) }
+        let shortTermTimes = downsample(result.loudness.shortTermTimeSeries, maxPoints: maxPts)
+            .map { $0.time }
+
+        let yLow = (momentaryVals + shortTermVals).min().map { min($0, -70.0) } ?? -70.0
+        let yDomain = yLow...0.0
+
+        let momentarySeries = CanvasChartSeries(
+            label: "Momentary", color: Theme.chartMomentary,
+            values: momentaryVals, xValues: momentaryTimes,
+            lineWidth: 1.0, opacity: 0.5, dashed: true
+        )
+        let shortTermSeries = CanvasChartSeries(
+            label: "Short-term", color: Theme.chartShortTerm,
+            values: shortTermVals, xValues: shortTermTimes,
+            lineWidth: 1.5, gradientFill: true
+        )
+        let integratedRef = CanvasReferenceLine(
+            y: result.loudness.integratedLUFS,
+            color: Theme.chartIntegrated,
+            dashed: true
+        )
+        return CanvasLineChart(
+            series: [momentarySeries, shortTermSeries],
+            yDomain: yDomain,
+            referenceLines: [integratedRef],
+            legendItems: [
+                ("Momentary",  Theme.chartMomentary),
+                ("Short-term", Theme.chartShortTerm),
+                ("Integrated", Theme.chartIntegrated)
+            ]
+        )
+    }
+
+    private func comparisonLoudnessChart(stack: ComparisonStack) -> some View {
+        var allSeries  = [CanvasChartSeries]()
+        var refLines   = [CanvasReferenceLine]()
+        var legendItems = [(String, Color)]()
+        var allVals    = [Double]()
+        let maxPts     = 600
+
+        for (i, file) in stack.files.enumerated() {
+            let color = Theme.fileColor(i)
+            let name  = String(file.metadata.fileName.prefix(16))
+            let series = file.loudness.shortTermTimeSeries
+            guard !series.isEmpty else { continue }
+
+            if showDelta && i > 0, let primary = stack.files.first {
+                // Delta mode: B-A over time
+                let primSeries = primary.loudness.shortTermTimeSeries
+                let count = min(series.count, primSeries.count)
+                let maxIdx = min(count, maxPts)
+                let step = max(1.0, Double(count - 1) / Double(maxPts - 1))
+
+                var diffVals = [Double]()
+                var diffTimes = [Double]()
+                for j in 0..<maxIdx {
+                    let idx = min(Int(Double(j) * step), count - 1)
+                    diffVals.append(series[idx] - primSeries[idx])
+                    diffTimes.append(Double(idx))
+                }
+                allSeries.append(CanvasChartSeries(
+                    label: name, color: color, values: diffVals,
+                    xValues: diffTimes, lineWidth: 1.2
+                ))
+                allVals += diffVals
+            } else {
+                let count  = series.count
+                let step   = max(1.0, Double(count - 1) / Double(maxPts - 1))
+                let maxIdx = min(count, maxPts)
+                let vals  = (0..<maxIdx).map { j in
+                    max(series[min(Int(Double(j) * step), count - 1)], -70.0)
+                }
+                let times = (0..<maxIdx).map { j -> Double in
+                    Double(min(Int(Double(j) * step), count - 1))
+                }
+                allSeries.append(CanvasChartSeries(
+                    label: name, color: color, values: vals,
+                    xValues: times,
+                    lineWidth: i == 0 ? 1.5 : 1.0,
+                    opacity: i == 0 ? 1.0 : 0.8,
+                    gradientFill: i == 0
+                ))
+                allVals += vals
+                refLines.append(CanvasReferenceLine(
+                    y: file.loudness.integratedLUFS, color: color, dashed: true
+                ))
             }
-            ForEach(shortTermData) { point in
-                LineMark(
-                    x: .value("Time", point.time),
-                    y: .value("LUFS", point.value)
-                )
-                .foregroundStyle(by: .value("Series", point.series))
-                .lineStyle(StrokeStyle(lineWidth: 1.5))
-            }
-            RuleMark(y: .value("Integrated", result.loudness.integratedLUFS))
-                .foregroundStyle(Theme.chartIntegrated)
-                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+            legendItems.append((name, color))
         }
-        .chartForegroundStyleScale([
-            "Momentary":   Theme.chartMomentary,
-            "Short-term":  Theme.chartShortTerm
-        ])
-        .chartYAxis {
-            AxisMarks(position: .leading) { _ in
-                AxisGridLine()
-                    .foregroundStyle(Theme.chartGrid)
-                AxisValueLabel()
-                    .font(.system(size: 9, weight: .regular, design: .monospaced))
-                    .foregroundStyle(Theme.chartAxis)
-            }
+
+        if showDelta {
+            let range = max(6.0, (allVals.map { abs($0) }.max() ?? 6.0)) * 1.1
+            return AnyView(CanvasLineChart(
+                series: allSeries,
+                yDomain: -range...range,
+                zeroLine: true,
+                referenceLines: [],
+                legendItems: legendItems
+            ))
+        } else {
+            let yLow = (allVals.min() ?? -70.0)
+            return AnyView(CanvasLineChart(
+                series: allSeries,
+                yDomain: yLow...0,
+                referenceLines: refLines,
+                legendItems: legendItems
+            ))
         }
-        .chartXAxis {
-            AxisMarks { _ in
-                AxisGridLine()
-                    .foregroundStyle(Theme.chartGrid)
-                AxisValueLabel()
-                    .font(.system(size: 9, weight: .regular, design: .monospaced))
-                    .foregroundStyle(Theme.chartAxis)
-            }
+    }
+
+    // MARK: - Helpers
+
+    private func toggleButton(_ label: String, isOn: Binding<Bool>) -> some View {
+        Button { isOn.wrappedValue.toggle() } label: {
+            Text(label)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(isOn.wrappedValue ? Theme.bg0 : Theme.textSecondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(isOn.wrappedValue ? Theme.accent : Theme.bg3)
+                .clipShape(Capsule())
         }
+        .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.2), value: isOn.wrappedValue)
     }
 
     private func downsample(_ series: [Double], maxPoints: Int) -> [(time: Double, value: Double)] {
