@@ -2,11 +2,17 @@ import SwiftUI
 
 struct CompliancePage: View {
     let result: AnalysisResult
+    var comparisonStack: ComparisonStack? = nil
     @State private var selectedPreset: PlatformPreset
 
-    init(result: AnalysisResult) {
+    init(result: AnalysisResult, comparisonStack: ComparisonStack? = nil) {
         self.result = result
+        self.comparisonStack = comparisonStack
         _selectedPreset = State(initialValue: PlatformPreset.builtInPresets[0])
+    }
+
+    private var isComparison: Bool {
+        (comparisonStack?.files.count ?? 0) > 1
     }
 
     var body: some View {
@@ -35,45 +41,127 @@ struct CompliancePage: View {
                     .padding(.vertical, 4)
                 }
 
-                // Compliance rows card
-                VStack(spacing: 0) {
-                    complianceHeader
-                    Divider().background(Theme.bg4)
+                if isComparison, let stack = comparisonStack {
+                    multiFileComplianceGrid(stack: stack)
+                } else {
+                    // Single-file compliance rows card
+                    VStack(spacing: 0) {
+                        complianceHeader
+                        Divider().background(Theme.bg4)
 
-                    if let lufsTarget = selectedPreset.targetIntegratedLUFS,
-                       let tolerance = selectedPreset.targetIntegratedTolerance {
+                        if let lufsTarget = selectedPreset.targetIntegratedLUFS,
+                           let tolerance = selectedPreset.targetIntegratedTolerance {
+                            complianceRow(
+                                metric: "Integrated",
+                                measured: result.loudness.integratedLUFS,
+                                target: lufsTarget,
+                                tolerance: tolerance,
+                                unit: "LUFS",
+                                checkType: .withinTolerance
+                            )
+                        } else {
+                            noNormalisationRow
+                        }
+
+                        Divider().background(Theme.bg4)
+
                         complianceRow(
-                            metric: "Integrated",
-                            measured: result.loudness.integratedLUFS,
-                            target: lufsTarget,
-                            tolerance: tolerance,
-                            unit: "LUFS",
-                            checkType: .withinTolerance
+                            metric: "True Peak",
+                            measured: result.truePeak.maxTruePeakDBTP,
+                            target: selectedPreset.maxTruePeakDBTP,
+                            tolerance: 0,
+                            unit: "dBTP",
+                            checkType: .belowThreshold
                         )
-                    } else {
-                        noNormalisationRow
                     }
-
-                    Divider().background(Theme.bg4)
-
-                    complianceRow(
-                        metric: "True Peak",
-                        measured: result.truePeak.maxTruePeakDBTP,
-                        target: selectedPreset.maxTruePeakDBTP,
-                        tolerance: 0,
-                        unit: "dBTP",
-                        checkType: .belowThreshold
-                    )
+                    .background(Theme.bg2)
+                    .overlay(alignment: .top) {
+                        Rectangle().fill(Theme.bg4).frame(height: 1)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 4)
                 }
-                .background(Theme.bg2)
-                .overlay(alignment: .top) {
-                    Rectangle().fill(Theme.bg4).frame(height: 1)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 4)
             }
             .padding()
         }
+    }
+
+    // MARK: - Multi-file grid
+
+    private func multiFileComplianceGrid(stack: ComparisonStack) -> some View {
+        let files = stack.files
+        let preset = selectedPreset
+
+        return VStack(spacing: 0) {
+            // Column headers (file names)
+            HStack(spacing: 0) {
+                Text("METRIC")
+                    .frame(width: 80, alignment: .leading)
+                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Theme.textTertiary)
+                ForEach(Array(files.enumerated()), id: \.element.id) { i, file in
+                    let color = Theme.fileColor(i)
+                    Text(String(file.metadata.fileName.prefix(10)))
+                        .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(color)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .lineLimit(1)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+
+            Divider().background(Theme.bg4)
+
+            // Integrated row
+            HStack(spacing: 0) {
+                Text("Integrated")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(width: 80, alignment: .leading)
+                ForEach(Array(files.enumerated()), id: \.element.id) { i, file in
+                    let val = file.loudness.integratedLUFS
+                    let passed: Bool
+                    if let target = preset.targetIntegratedLUFS, let tol = preset.targetIntegratedTolerance {
+                        passed = abs(val - target) <= tol
+                    } else {
+                        passed = true
+                    }
+                    Text(String(format: "%.1f", val))
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(passed ? Theme.pass : Theme.error)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+
+            Divider().background(Theme.bg4)
+
+            // True Peak row
+            HStack(spacing: 0) {
+                Text("True Peak")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(width: 80, alignment: .leading)
+                ForEach(Array(files.enumerated()), id: \.element.id) { i, file in
+                    let val    = file.truePeak.maxTruePeakDBTP
+                    let passed = val <= preset.maxTruePeakDBTP
+                    Text(String(format: "%.1f", val))
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(passed ? Theme.pass : Theme.error)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+        }
+        .background(Theme.bg2)
+        .overlay(alignment: .top) {
+            Rectangle().fill(Theme.bg4).frame(height: 1)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color.black.opacity(0.4), radius: 8, x: 0, y: 4)
     }
 
     // MARK: - Header

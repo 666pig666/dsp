@@ -49,4 +49,33 @@ enum Theme {
     static func fileColor(_ index: Int) -> Color {
         Color(hex: fileColorHex[min(index, fileColorHex.count - 1)])
     }
+
+    // MARK: - Heat Gradient (waterfall / stereograph intensity mapping)
+
+    /// -100 dBFS / silence: transparent
+    static let heatTransparent = Color.clear
+    /// -60 dBFS: deep blue
+    static let heatDeepBlue  = Color(hex: 0x0A1628)
+    /// -40 dBFS: teal
+    static let heatTeal      = Color(hex: 0x1A6B5A)
+    /// -20 dBFS: green
+    static let heatGreen     = Color(hex: 0x2ECC71)
+    /// -10 dBFS: yellow
+    static let heatYellow    = Color(hex: 0xE6A817)
+    ///   0 dBFS: red
+    static let heatRed       = Color(hex: 0xE74C6F)
+
+    // MARK: - Canvas Chart Background
+
+    /// Radial gradient center — slightly lighter
+    static let chartBgCenter = Color(hex: 0x12121E)
+    /// Radial gradient edge — darker
+    static let chartBgEdge   = Color(hex: 0x08080C)
+    /// 1pt chart border
+    static let chartBorder   = Color(hex: 0x1E1E2E)
+
+    // MARK: - Stereograph Axis
+
+    /// Dashed reference lines inside the goniometer
+    static let stereographAxisColor = Color(hex: 0x2A2A3A)
 }

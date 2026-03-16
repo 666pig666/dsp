@@ -1,12 +1,22 @@
 import Foundation
 import Accelerate
 
+/// A single sampled stereo position for the Lissajous/goniometer display.
+struct StereographPoint: Codable {
+    /// Mid = (rmsL + rmsR) / 2
+    let m: Float
+    /// Side = (rmsL - rmsR) / 2  (positive = left-heavy, negative = right-heavy)
+    let s: Float
+}
+
 struct StereoResult: Codable {
     let correlationTimeSeries: [Double]
     let averageCorrelation: Double
     let minimumCorrelation: Double
     let midSideRatioDB: Double
     let blockDurationMs: Double
+    /// 10,000 evenly-spaced RMS-based M/S samples for StereographView rendering.
+    let stereographPoints: [StereographPoint]
 }
 
 struct StereoAnalyzer {
@@ -79,12 +89,35 @@ struct StereoAnalyzer {
             msRatioDB = Double.infinity
         }
 
+        // Stereograph: 10,000 evenly-spaced RMS-based M/S samples
+        let targetPoints = 10_000
+        let windowSize = 64
+        let totalSamples = min(left.count, right.count)
+        var stereographPoints = [StereographPoint]()
+        stereographPoints.reserveCapacity(targetPoints)
+        for i in 0..<targetPoints {
+            let centerIdx = Int(Double(i) * Double(totalSamples) / Double(targetPoints))
+            let startIdx = max(0, min(centerIdx, totalSamples - windowSize))
+            let endIdx = startIdx + windowSize
+            let lWindow = Array(left[startIdx..<endIdx])
+            let rWindow = Array(right[startIdx..<endIdx])
+            var rmsL: Float = 0
+            var rmsR: Float = 0
+            vDSP_rmsqv(lWindow, 1, &rmsL, vDSP_Length(windowSize))
+            vDSP_rmsqv(rWindow, 1, &rmsR, vDSP_Length(windowSize))
+            stereographPoints.append(StereographPoint(
+                m: (rmsL + rmsR) * 0.5,
+                s: (rmsL - rmsR) * 0.5
+            ))
+        }
+
         return StereoResult(
             correlationTimeSeries: correlationSeries,
             averageCorrelation: avgCorrelation,
             minimumCorrelation: minCorrelation,
             midSideRatioDB: msRatioDB,
-            blockDurationMs: 100.0
+            blockDurationMs: 100.0,
+            stereographPoints: stereographPoints
         )
     }
 }

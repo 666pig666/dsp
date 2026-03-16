@@ -42,6 +42,9 @@
 		A1000000000000000000001F /* ExportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000020 /* ExportManager.swift */; };
 		A10000000000000000000020 /* ValidationHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000021 /* ValidationHarness.swift */; };
 		A10000000000000000000021 /* ValidationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000022 /* ValidationView.swift */; };
+		A10000000000000000000025 /* CanvasLineChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000025 /* CanvasLineChart.swift */; };
+		A10000000000000000000026 /* WaterfallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000026 /* WaterfallView.swift */; };
+		A10000000000000000000027 /* StereographView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000027 /* StereographView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -81,6 +84,9 @@
 		A20000000000000000000022 /* ValidationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationView.swift; sourceTree = "<group>"; };
 		A20000000000000000000023 /* PlatformPresets.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = PlatformPresets.json; sourceTree = "<group>"; };
 		A20000000000000000000024 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		A20000000000000000000025 /* CanvasLineChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasLineChart.swift; sourceTree = "<group>"; };
+		A20000000000000000000026 /* WaterfallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaterfallView.swift; sourceTree = "<group>"; };
+		A20000000000000000000027 /* StereographView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StereographView.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* SPECTRAL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SPECTRAL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -112,6 +118,9 @@
 				A20000040000000000000004 /* AudioFileMetadata.swift */,
 				A20000050000000000000005 /* ColorExtension.swift */,
 				A20000000000000000000024 /* Theme.swift */,
+				A20000000000000000000025 /* CanvasLineChart.swift */,
+				A20000000000000000000026 /* WaterfallView.swift */,
+				A20000000000000000000027 /* StereographView.swift */,
 				A20000080000000000000008 /* DecodedAudio.swift */,
 				A20000090000000000000009 /* ChannelMode.swift */,
 				A2000000000000000000000A /* ChannelData.swift */,
@@ -257,6 +266,9 @@
 				A1000000000000000000001F /* ExportManager.swift in Sources */,
 				A10000000000000000000020 /* ValidationHarness.swift in Sources */,
 				A10000000000000000000021 /* ValidationView.swift in Sources */,
+				A10000000000000000000025 /* CanvasLineChart.swift in Sources */,
+				A10000000000000000000026 /* WaterfallView.swift in Sources */,
+				A10000000000000000000027 /* StereographView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
